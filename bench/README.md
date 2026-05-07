@@ -29,7 +29,7 @@ codec wrappers; subsequent runs are incremental.
 | zlib     | raw byte baseline                   | `libz-dev`           | `zlib`                    |
 | libpng   | PNG codec                           | `libpng-dev`         | `libpng`                  |
 | libtiff  | TIFF codec                          | `libtiff-dev`        | `libtiff`                 |
-| OpenJPEG | JPEG 2000 codec (>= 2.3)            | `libopenjp2-7-dev`   | `openjpeg`                |
+| OpenJPEG | JPEG 2000 codec (>= 2.1)            | `libopenjp2-7-dev`   | `openjpeg`                |
 
 vcpkg or Conan also work; point CMake at them with
 `-DCMAKE_PREFIX_PATH=...`. Per AI Build Prompt #14 the harness fails

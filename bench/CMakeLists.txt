@@ -57,10 +57,15 @@ if(SCC_ENABLE_BENCH_HARNESS)
     find_package(ZLIB     REQUIRED)
     find_package(PNG      REQUIRED)
     find_package(TIFF     REQUIRED)
-    # OpenJPEG ships an OPENJPEG-config.cmake that exports openjp2;
-    # vcpkg/apt/brew all install this. We require version 2.3+ for the
-    # opj_codec_set_threads / opj_dparameters APIs we use.
-    find_package(OpenJPEG 2.3 REQUIRED CONFIG)
+    # OpenJPEG exports `openjp2` via its CMake config (vcpkg/apt/brew
+    # all ship it). We deliberately do NOT pin a version: Debian/Ubuntu
+    # packages OpenJPEG with a CMake config that omits the version field
+    # (every candidate reports "version: unknown"), so any
+    # version-constrained `find_package` fails on `apt install
+    # libopenjp2-7-dev`. The API surface we use (opj_image_create,
+    # opj_create_compress, opj_setup_encoder, opj_stream_create + the
+    # callback setters, opj_dparameters_t) has been stable since 2.1.
+    find_package(OpenJPEG REQUIRED CONFIG)
 
     add_executable(scc_bench
         src/main.cpp

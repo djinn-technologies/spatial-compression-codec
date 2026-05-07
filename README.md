@@ -285,7 +285,7 @@ only need the ones for the components you intend to build.
 | Component                | Toolchain                                                    |
 | ------------------------ | ------------------------------------------------------------ |
 | `codec/`, `cabi/`, `bench/` | CMake **3.27+**, a C++17 compiler (gcc 9+ / clang 10+ / MSVC VS2019 16.10+) |
-| `bench/` (extra deps)    | OpenJPEG 2.3+, libpng, libtiff, zlib                         |
+| `bench/` (extra deps)    | OpenJPEG 2.1+, libpng, libtiff, zlib                         |
 | `sdk/wasm/`              | Emscripten **3.1.50+**, Node 20+                             |
 | `sdk/python/`            | Python 3.10+, `scikit-build-core`, `pybind11`                |
 | `sdk/unity/`             | Unity 2022.3 LTS or newer                                    |
