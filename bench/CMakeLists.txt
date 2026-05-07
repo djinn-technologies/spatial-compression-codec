@@ -57,15 +57,28 @@ if(SCC_ENABLE_BENCH_HARNESS)
     find_package(ZLIB     REQUIRED)
     find_package(PNG      REQUIRED)
     find_package(TIFF     REQUIRED)
-    # OpenJPEG exports `openjp2` via its CMake config (vcpkg/apt/brew
-    # all ship it). We deliberately do NOT pin a version: Debian/Ubuntu
-    # packages OpenJPEG with a CMake config that omits the version field
-    # (every candidate reports "version: unknown"), so any
-    # version-constrained `find_package` fails on `apt install
-    # libopenjp2-7-dev`. The API surface we use (opj_image_create,
-    # opj_create_compress, opj_setup_encoder, opj_stream_create + the
-    # callback setters, opj_dparameters_t) has been stable since 2.1.
-    find_package(OpenJPEG REQUIRED CONFIG)
+
+    # OpenJPEG: prefer pkg-config because Debian/Ubuntu's
+    # `libopenjp2-7-dev` ships an `OpenJPEGConfig.cmake` that
+    #   (a) reports `version: unknown` (so any version-pinned find
+    #       rejects every candidate), and
+    #   (b) exports the `openjp2` target without populating
+    #       INTERFACE_INCLUDE_DIRECTORIES, so consumers can't find
+    #       `<openjpeg.h>` (the headers live at `/usr/include/openjpeg-2.4/`).
+    # The matching `libopenjp2.pc` pkg-config file is correct in both
+    # respects, so we use it as the source of truth.
+    #
+    # Fallback: vcpkg / brew ship a complete CMake config; if pkg-config
+    # is absent we drop back to find_package(CONFIG) on the assumption
+    # that the local install is well-formed.
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(OpenJPEG REQUIRED IMPORTED_TARGET libopenjp2)
+        set(SCC_OPENJPEG_TARGET PkgConfig::OpenJPEG)
+    else()
+        find_package(OpenJPEG REQUIRED CONFIG)
+        set(SCC_OPENJPEG_TARGET openjp2)
+    endif()
 
     add_executable(scc_bench
         src/main.cpp
@@ -92,7 +105,7 @@ if(SCC_ENABLE_BENCH_HARNESS)
         ZLIB::ZLIB
         PNG::PNG
         TIFF::TIFF
-        openjp2
+        ${SCC_OPENJPEG_TARGET}
     )
     target_compile_features(scc_bench PRIVATE cxx_std_17)
     scc_apply_bench_compile_options(scc_bench)
