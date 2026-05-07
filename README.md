@@ -1,105 +1,313 @@
-# spatial-compression-codec
+# Spatial Compression Codec (SCC)
 
-The **Spatial Compression Codec (SCC)** — a depth-first compression
-codec plus the SDKs and Studio tooling that wrap it. The full solutions
-architecture lives in [`docs/SAD.md`](docs/SAD.md); the executable
-acceptance criteria live in [`docs/Acceptance_Criteria.md`](docs/Acceptance_Criteria.md).
+**A depth-aware codec for RGB-D video.** SCC compresses the depth
+channel that accompanies colour video in 3D capture, telepresence, and
+volumetric streaming pipelines — and packs the result inside an
+ordinary H.264 bitstream so a single video file or RTP stream carries
+both colour and depth.
 
-## What's in this repo
+```
+┌──────────────────┐    ┌─────────────────────┐    ┌──────────────────┐
+│ Depth sensor     │ →  │ SCC encoder (depth) │ →  │ H.264 SEI NAL    │
+│ (RealSense /     │    │ + H.264 (colour)    │    │ wrapped bitstream│
+│  Azure Kinect /  │    └─────────────────────┘    └──────────────────┘
+│  ZED / iToF)     │                                       │
+└──────────────────┘                                       ▼
+                                                   ┌──────────────────┐
+                                                   │ SCC decoder      │
+                                                   │ → reconstructed  │
+                                                   │   point cloud    │
+                                                   └──────────────────┘
+```
+
+SCC implements US Patent **10,827,161 B2** ("Method for Real-Time
+Compression of 3D Video Streaming Frames"), with a Range Asymmetric
+Numeral Systems (rANS) entropy back-end and movement-aware pixel
+interlacing. The full architecture is in [`docs/SAD.md`](docs/SAD.md).
+
+---
+
+## What it does
+
+| Capability                              | How                                                          |
+| --------------------------------------- | ------------------------------------------------------------ |
+| **Lossless depth round-trip**           | Bit-exact reconstruction at 8 / 12 / 16 bpp                  |
+| **Bounded-error lossy modes**           | `lossy:high` (visually lossless) and `lossy:streaming` (low-bitrate) |
+| **Real-time throughput**                | ≥ 30 fps at 1280×720 / 12 bpp on a single Ryzen-class core   |
+| **High compression ratio**              | Beats raw deflate / PNG / TIFF on every fixture; competitive with JPEG 2000 lossless and dominant on lossy depth |
+| **H.264 in-band carriage**              | Compressed depth ships as a `user_data_unregistered` SEI NAL — the colour stream stays unmodified |
+| **Movement-aware encoding**             | Quad-tree partitions still regions and applies pixel-level interlacing only where motion warrants it |
+| **Cross-platform SDKs**                 | TypeScript/WASM, Python, Unity (UPM), Unreal (UPlugin), plus a stable C ABI |
+| **Studio reference app**                | React + WebGPU UI, Fastify control plane, Rust capture agent — runs end-to-end against a synthetic depth source if no hardware is available |
+
+---
+
+## Try it in 5 minutes
+
+The fastest way to see SCC working is the comparator harness, which
+benchmarks SCC against zlib, PNG, TIFF, and JPEG 2000 on a deterministic
+synthetic corpus and writes an HTML report you can open in a browser.
+
+### Linux / macOS
+
+```bash
+# 1. Install the comparison codecs (one-time)
+sudo apt-get install -y cmake ninja-build build-essential \
+                        libpng-dev libtiff-dev libopenjp2-7-dev zlib1g-dev
+# (macOS) brew install cmake ninja libpng libtiff openjpeg
+
+# 2. Configure + build the harness
+cmake -S . -B build \
+      -DSCC_ENABLE_BENCH_HARNESS=ON \
+      -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target scc_bench -j
+
+# 3. Run the demo bench (≈3 minutes on a modern laptop)
+bench/run-quick.sh
+
+# 4. Open the report
+xdg-open bench/reports/quick/report.html   # Linux
+open      bench/reports/quick/report.html  # macOS
+```
+
+You'll see a side-by-side comparison: encode/decode FPS (single-thread
+and multi-thread), compression ratio, PSNR, SSIM, and a 3D
+reconstruction-error metric, across three synthetic depth sequences
+(moving plane, static room with sensor noise, textured sphere).
+
+### Windows (PowerShell)
+
+```powershell
+# Install codecs via vcpkg (one-time)
+vcpkg install libpng libtiff openjpeg zlib
+
+cmake -S . -B build `
+      -DSCC_ENABLE_BENCH_HARNESS=ON `
+      -DCMAKE_BUILD_TYPE=Release `
+      -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake"
+cmake --build build --target scc_bench --config Release
+
+# Windows users: invoke the binary directly (the .sh wrapper is bash-only)
+build\bench\Release\scc-bench.exe `
+      --corpus bench\fixtures `
+      --codecs scc,jpeg2000,png,tiff,zlib `
+      --profiles lossless,lossy:high `
+      --resolutions 320x240 `
+      --bit-depths 12 `
+      --runs 5 `
+      --out bench\reports\quick `
+      --format csv,json,html
+
+start bench\reports\quick\report.html
+```
+
+A reference report shipped under
+[`bench/reports/sample/index.html`](bench/reports/sample/index.html)
+shows what good output looks like before you run anything.
+
+---
+
+## Try the Studio app (no depth camera required)
+
+The Studio is the reference application: a web UI for capturing,
+playing back, and configuring SCC streams. The capture agent ships
+with a **mock sensor** that produces synthetic depth frames — so you
+can run the full stack end-to-end on any laptop, no RealSense / Azure
+Kinect / ZED required.
+
+You'll need four terminals.
+
+### Terminal 1 — Postgres (control-plane storage)
+
+```bash
+docker run --rm -d --name scc-studio-pg \
+  -e POSTGRES_PASSWORD=scc -e POSTGRES_USER=scc_app -e POSTGRES_DB=scc_studio \
+  -p 5432:5432 postgres:16
+```
+
+### Terminal 2 — Build libscc, then start the agent
+
+```bash
+# Build the C ABI shared library that the Rust agent links against.
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
+cmake --build build --target scc_cabi -j
+
+# Tell the agent where libscc lives, then launch with the mock sensor.
+export SCC_LIB_DIR="$PWD/build/cabi"
+cd studio/agent
+cargo run --release -- --mock-sensor --api-url http://localhost:8080 \
+                                     --api-key dev_key_replace_me
+```
+
+### Terminal 3 — Studio API
+
+```bash
+cd studio/api
+npm install
+cp .env.example .env       # the default values point at the Postgres above
+npm run db:migrate
+npm run dev                # listens on :8080
+```
+
+### Terminal 4 — Studio frontend
+
+```bash
+cd studio/frontend
+npm install
+npm run dev                # Vite dev server on :5173
+```
+
+Open [http://localhost:5173](http://localhost:5173) in a WebGPU-capable
+browser (Chrome 113+, Edge 113+, or Firefox Nightly with the WebGPU
+flag enabled).
+
+You should be able to:
+
+1. Pick **mock-0** from the sensor list.
+2. Click **Start capture** — live synthetic depth frames render in the
+   volumetric viewer; bitrate / FPS / encode-ms tick in the analytics
+   panel.
+3. Click **Stop**, then visit **Playback** — the recorded session
+   appears and is replayable.
+
+If WebGPU is unavailable, the viewer renders a fallback card; the rest
+of the UI works unaffected.
+
+---
+
+## Use the codec from your own code
+
+SCC ships first-class bindings so you don't have to wire up the C ABI
+yourself unless you want to.
+
+### TypeScript / WebAssembly
+
+```bash
+npm install @djinn/scc-wasm
+```
+
+```ts
+import { Encoder, Decoder } from '@djinn/scc-wasm';
+
+const enc = await Encoder.create({ width: 640, height: 480, bitDepth: 12,
+                                    profile: 'lossy:high' });
+const sei = enc.encode(depthFrame);   // depthFrame: Uint16Array
+
+const dec = await Decoder.create();
+const { data, width, height } = dec.decode(sei);
+```
+
+### Python
+
+```bash
+pip install scc-py
+```
+
+```python
+import numpy as np, scc
+
+enc = scc.Encoder(width=640, height=480, bit_depth=12, profile="lossy:high")
+sei = enc.encode(depth_frame)            # depth_frame: np.uint16 array
+
+dec = scc.Decoder()
+out = dec.decode(sei)                    # zero-copy numpy view
+```
+
+### Unity
+
+Add the package via *Window → Package Manager → Add package from disk*
+and point at `sdk/unity/com.djinn.scc/package.json`.
+
+```csharp
+using Djinn.SCC;
+
+using var encoder = new Encoder(SCCProfile.LossyHigh, bitDepth: 12, w, h);
+byte[] sei = encoder.Encode(depthBuffer);   // NativeArray<ushort>
+```
+
+### Unreal Engine 5.3+
+
+Copy `sdk/unreal/SCC/` into your project's `Plugins/` directory and
+regenerate Visual Studio project files. The `USCCStreamComponent`
+class exposes `BeginEncode` / `EncodeFrame` / `DecodeSEI` as Blueprint
+nodes.
+
+### C / C++ (libscc)
+
+```c
+#include <libscc.h>
+
+scc_encoder_t* enc = NULL;
+scc_encoder_create(640, 480, 12, SCC_PROFILE_LOSSY_HIGH, &enc);
+
+uint8_t* out = NULL;
+size_t   out_n = 0;
+scc_encoder_encode(enc, depth_buffer, 640 * 480, &out, &out_n);
+
+scc_buffer_free(out);
+scc_encoder_destroy(enc);
+```
+
+The full ABI is in [`cabi/include/libscc.h`](cabi/include/libscc.h);
+the contract is documented in [`docs/abi.md`](docs/abi.md).
+
+---
+
+## Repo layout
 
 ```
 .
 ├── codec/        C++17 reference codec (rANS, disparity, frequency, quad-tree, SEI)
 ├── cabi/         libscc — stable C ABI used by every binding
 ├── sdk/
-│   ├── wasm/     @djinn/scc-wasm    — WebAssembly + TS adapter
+│   ├── wasm/     @djinn/scc-wasm    — WebAssembly + TypeScript adapter
 │   ├── python/   scc-py             — pybind11 + scikit-build-core
-│   ├── unity/    com.djinn.scc      — UPM package
-│   └── unreal/   SCC                — UPlugin (UE 5.3+)
+│   ├── unity/    com.djinn.scc      — Unity Package Manager package
+│   └── unreal/   SCC                — UPlugin (Unreal Engine 5.3+)
 ├── studio/
 │   ├── agent/    scc-studio-agent   — Rust capture agent
-│   ├── api/      Studio control-plane API (Fastify + Postgres RLS)
+│   ├── api/      Studio control plane (Fastify + Postgres)
 │   └── frontend/ Studio UI (React 18 + WebGPU)
-├── bench/        scc-bench          — comparator harness vs jpeg2000/png/tiff/zlib
+├── bench/        scc-bench          — comparator vs JPEG 2000 / PNG / TIFF / zlib
 ├── ci/           Conformance suite (executable Acceptance_Criteria.md)
-└── docs/         SAD, ADRs, acceptance criteria
+└── docs/         SAD, ADRs, acceptance criteria, diagrams
 ```
 
-Each component carries its own `README.md` with subsystem-specific
-detail. This top-level README is the roadmap and the host for the
-quick-start commands.
+Each subdirectory carries its own README with module-specific detail.
 
 ---
 
-## Toolchain setup (one-time)
+## Building from source
 
-You only need the toolchains for the components you intend to build.
+A complete build of every component requires several toolchains; you
+only need the ones for the components you intend to build.
 
-| Component                | Toolchain                                                 |
-| ------------------------ | --------------------------------------------------------- |
+| Component                | Toolchain                                                    |
+| ------------------------ | ------------------------------------------------------------ |
 | `codec/`, `cabi/`, `bench/` | CMake **3.27+**, a C++17 compiler (gcc 9+ / clang 10+ / MSVC VS2019 16.10+) |
-| `bench/` (extra)         | OpenJPEG 2.3+, libpng, libtiff, zlib                      |
-| `sdk/wasm/`              | Emscripten **3.1.50+**, Node 20+                          |
-| `sdk/python/`            | Python 3.10+, `pip install scikit-build-core pybind11`    |
-| `sdk/unity/`             | Unity 2022.3 LTS or newer                                 |
-| `sdk/unreal/`            | Unreal Engine 5.3+, MSVC VS2022, .NET 6 SDK               |
-| `studio/agent/`          | Rust **1.75+** (stable), `cargo`, `protoc`                |
-| `studio/api/`            | Node **20.10+**, Docker (Postgres testcontainer)          |
-| `studio/frontend/`       | Node **20.10+**, a WebGPU-capable browser for e2e         |
-| `ci/conformance/`        | Python **3.11+** (stdlib only)                            |
+| `bench/` (extra deps)    | OpenJPEG 2.3+, libpng, libtiff, zlib                         |
+| `sdk/wasm/`              | Emscripten **3.1.50+**, Node 20+                             |
+| `sdk/python/`            | Python 3.10+, `scikit-build-core`, `pybind11`                |
+| `sdk/unity/`             | Unity 2022.3 LTS or newer                                    |
+| `sdk/unreal/`            | Unreal Engine 5.3+, MSVC VS2022                              |
+| `studio/agent/`          | Rust **1.75+** (stable), `cargo`, `protoc`                   |
+| `studio/api/`            | Node **20.10+**, Docker                                      |
+| `studio/frontend/`       | Node **20.10+**, a WebGPU-capable browser                    |
+| `ci/conformance/`        | Python **3.11+** (stdlib only)                               |
 
-### Apt one-liners (Ubuntu 22.04+)
-
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-  cmake ninja-build build-essential \
-  libpng-dev libtiff-dev libopenjp2-7-dev zlib1g-dev \
-  python3.11 python3-pip nodejs npm protobuf-compiler
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-### Brew one-liner (macOS)
+### Build the codec library + run unit tests
 
 ```bash
-brew install cmake ninja libpng libtiff openjpeg zlib python@3.11 node rustup protobuf
-rustup-init -y
-```
-
-### winget one-liner (Windows 11)
-
-```powershell
-winget install Kitware.CMake Microsoft.VisualStudio.2022.BuildTools `
-               OpenJS.NodeJS.LTS Python.Python.3.11 Rustlang.Rustup `
-               Google.Protobuf
-```
-
-OpenJPEG / libpng / libtiff on Windows are most easily installed via
-[vcpkg](https://vcpkg.io); pass `-DCMAKE_TOOLCHAIN_FILE=<vcpkg>.cmake`
-to the CMake configure step.
-
----
-
-## Step-by-step: build the codec + run its tests
-
-This is the smallest useful loop — build the C++ codec, run unit tests,
-run the rANS micro-bench. ~2 minutes on a modern machine.
-
-```bash
-# 1. Configure
 cmake -S . -B build -DSCC_ENABLE_TESTS=ON
-
-# 2. Build
 cmake --build build -j
-
-# 3. Run unit tests
 ctest --test-dir build --output-on-failure
 ```
 
-The first configure pulls Catch2 v3 + rapidcheck via FetchContent; on
-an air-gapped machine pre-populate
-[`SCC_FETCHCONTENT_BASE_DIR`](docs/SAD.md#dependencies) or use a vcpkg
-cache.
+Catch2 v3 + rapidcheck are pulled via CMake `FetchContent` on the first
+configure. For air-gapped builds, set
+[`SCC_FETCHCONTENT_BASE_DIR`](docs/SAD.md#dependencies) to a pre-populated
+cache, or build under vcpkg and supply
+`-DCMAKE_TOOLCHAIN_FILE=<vcpkg>.cmake`.
 
 ### Sanitiser presets
 
@@ -111,248 +319,50 @@ ctest --preset asan
 
 ```powershell
 cmake --preset msvc-asan     # Windows MSVC — ASan only
-cmake --build --preset msvc-asan
-ctest --preset msvc-asan
 ```
 
-> **MSVC ASan note.** Don't combine `Debug` build type with sanitisers
-> on Windows. `/RTC1` conflicts with `/fsanitize=address`. The
-> `msvc-asan` preset uses `RelWithDebInfo` for that reason.
-
-### Module micro-benches
-
-Per-module benches are gated by `SCC_ENABLE_BENCH=ON` (on by default at
-top-level). Each is its own ctest entry under the `perf` label:
-
-```bash
-cmake --build build --target bench_rans bench_disparity bench_quadtree
-build/bench/bench_rans
-build/bench/bench_disparity
-build/bench/bench_quadtree
-ctest --test-dir build -L perf
-```
-
-Acceptance gates (see ADR-001 / -002 / -004):
-rANS-8 encode > 200 MB/s · disparity > 1 GB/s · quadtree partition > 60 fps @ 1080p.
+> Don't combine `Debug` build type with sanitisers on Windows — `/RTC1`
+> conflicts with `/fsanitize=address`. The `msvc-asan` preset uses
+> `RelWithDebInfo` for that reason.
 
 ---
 
-## Step-by-step: run the comparator harness (`scc-bench`)
+## Verifying a release
 
-`scc-bench` benchmarks SCC against jpeg2000, png, tiff, and zlib over a
-deterministic synthetic corpus and emits CSV / JSON / HTML reports.
-See [`bench/README.md`](bench/README.md) and ADR-014 for the full
-methodology.
+Two automated gates ship in the repo:
 
-```bash
-# 1. Install codec deps if you haven't already (Ubuntu)
-sudo apt-get install -y libpng-dev libtiff-dev libopenjp2-7-dev zlib1g-dev
-
-# 2. Configure with the harness target enabled
-cmake -S . -B build \
-      -DSCC_ENABLE_BENCH_HARNESS=ON \
-      -DCMAKE_BUILD_TYPE=Release
-
-# 3. Build the binary
-cmake --build build --target scc_bench -j
-
-# 4. Run the 5-minute developer bench
-bench/run-quick.sh
-
-# 5. Open the HTML report
-xdg-open bench/reports/quick/report.html   # or `open` on macOS
-```
-
-The CI regression gate is wired through ctest:
+- **`scc-bench`** ([`bench/`](bench/)) — runs each release against the
+  committed performance + compression baseline at
+  [`bench/reports/baseline.json`](bench/reports/baseline.json). Fails
+  on > 5 % throughput regression or > 2 pp compression-ratio regression.
+- **Conformance suite** ([`ci/conformance/`](ci/conformance/)) — every
+  `REQ-NNN` in [`docs/Acceptance_Criteria.md`](docs/Acceptance_Criteria.md)
+  is a YAML case the runner executes. Blocking failures fail the
+  release.
 
 ```bash
+# Bench gate
 ctest --test-dir build -L bench
-```
 
----
-
-## Step-by-step: run the conformance suite
-
-Mechanical execution of every REQ in `docs/Acceptance_Criteria.md`. See
-[`ci/conformance/README.md`](ci/conformance/README.md) and ADR-015.
-
-```bash
-# 1. Self-tests (no codec build required)
-python -m unittest ci.conformance.tests.test_runner -v
-
-# 2. Lint cases without spawning subprocesses
-python ci/conformance/run.py --no-execute
-
-# 3. Run only the cases whose evidence has changed since merge-base
-python ci/conformance/run.py --bisect
-
-# 4. Full local run (assumes `build/` exists with codec compiled)
+# Conformance gate
 python ci/conformance/run.py --out reports/local
-
-# 5. View the report
-xdg-open reports/local/conformance.html
 ```
 
-The runner exits non-zero iff any **blocking** case failed. CI uses
-`--gh-annotations` to surface failures inline on the PR.
+GitHub Actions wires both into CI; see [`.github/workflows/`](.github/workflows/).
 
 ---
 
-## Step-by-step: bring up the full Studio stack
+## Documentation
 
-The Studio is three services running together: the **agent** captures
-from a depth sensor, the **API** is the control plane (with Postgres),
-and the **frontend** is the React UI. Local dev runs all three on one
-machine.
-
-### 1. Start Postgres (one terminal)
-
-The Studio API uses [Postgres testcontainers](https://node.testcontainers.org/)
-for tests, but local dev expects a long-lived Postgres. Easiest path:
-
-```bash
-docker run --rm -d \
-  --name scc-studio-pg \
-  -e POSTGRES_PASSWORD=scc \
-  -e POSTGRES_USER=scc_app \
-  -e POSTGRES_DB=scc_studio \
-  -p 5432:5432 \
-  postgres:16
-```
-
-### 2. Build + migrate + start the API (second terminal)
-
-```bash
-cd studio/api
-npm install
-cp .env.example .env             # edit DB_URL + JWT keys if needed
-npm run db:migrate                # apply Drizzle migrations
-npm run dev                       # listens on :8080
-```
-
-The API exposes `/api/v1/*`. Authentication is dual-track — API key for
-service-to-service, RS256 JWT for the frontend (see ADR-012).
-
-### 3. Build the codec libraries the agent links against (third terminal)
-
-The agent's Rust crate links against `libscc` (the C ABI from
-`cabi/`). Build it once:
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
-cmake --build build --target scc_cabi -j
-```
-
-This produces `build/cabi/libscc.{so,dylib,dll}`. The agent's
-`build.rs` resolves it via `SCC_LIB_DIR`:
-
-```bash
-export SCC_LIB_DIR="$PWD/build/cabi"   # or set per-shell
-```
-
-### 4. Start the agent
-
-```bash
-cd studio/agent
-cargo run --release -- --api-url http://localhost:8080 \
-                       --api-key dev_key_replace_me
-```
-
-The agent registers with the API on startup, advertises its sensors
-(`/v1/sensors`), and waits for capture-session commands.
-
-### 5. Start the frontend (fourth terminal)
-
-```bash
-cd studio/frontend
-npm install
-npm run dev                       # Vite dev server on :5173
-```
-
-The dev server proxies `/api → http://localhost:8080` (HTTP +
-WebSocket) so CORS is a non-issue. Open
-[http://localhost:5173](http://localhost:5173) in a WebGPU-capable
-browser (Chrome 113+, Edge 113+, or Firefox Nightly with the WebGPU
-flag).
-
-### Smoke test the stack
-
-1. Sign in with the dev API key (or use the JWT issued by `npm run dev:token`).
-2. The Capture page should populate with the agent's sensors.
-3. Click **Start capture** — you should see live depth frames in the
-   volumetric viewer and bitrate / FPS in the analytics panel.
-4. Click **Stop**, then navigate to **Playback** — the session you
-   just recorded should appear in the list.
-
-If WebGPU is unavailable (older browser, headless Linux without
-Vulkan), the viewer renders a fallback card explaining the
-requirement; the rest of the UI is unaffected.
-
----
-
-## Step-by-step: build a binding (SDK)
-
-### WASM (`@djinn/scc-wasm`)
-
-```bash
-cd sdk/wasm
-source /path/to/emsdk/emsdk_env.sh
-npm install
-npm run build           # writes dist/scc.{js,wasm,d.ts}
-npm test
-```
-
-### Python (`scc-py`)
-
-```bash
-cd sdk/python
-pip install -e ".[dev]"
-pytest -q
-```
-
-`scikit-build-core` invokes CMake under the hood; the resulting wheel
-embeds the same `libscc` C ABI used everywhere else.
-
-### Unity
-
-Open the Unity project (`sdk/unity/com.djinn.scc/`) in Unity 2022.3
-LTS. The `Tests/EditMode` and `Tests/PlayMode` suites are runnable
-from the **Test Runner** window. The package can be added to a host
-project via *Window → Package Manager → Add package from disk*.
-
-### Unreal
-
-Copy `sdk/unreal/SCC/` into your project's `Plugins/` directory.
-Generate project files (right-click the `.uproject` → *Generate Visual
-Studio project files*), then build with VS 2022. Functional tests are
-in `SCCRoundTripFunctionalTest.cpp`; run them from the Editor's
-**Session Frontend → Automation** tab.
-
----
-
-## Continuous integration
-
-Every push and PR runs three workflows:
-
-| Workflow                    | What it gates                                   |
-| --------------------------- | ----------------------------------------------- |
-| `codec.yml`                 | `cmake` build + `ctest` matrix (Linux / macOS / Windows) |
-| `bench.yml`                 | `scc-bench` against `bench/reports/baseline.json` (ADR-014) |
-| `conformance.yml`           | The `ci/conformance/` runner over every YAML case (ADR-015) |
-
-Failed workflows surface inline on the PR; the conformance run also
-emits `::error` annotations against the offending evidence files.
-
----
-
-## Where to read next
-
-- [`docs/SAD.md`](docs/SAD.md) — solutions architecture; start at §1.
-- [`docs/Acceptance_Criteria.md`](docs/Acceptance_Criteria.md) — the
-  source-of-truth REQ list.
-- [`docs/adr/`](docs/adr/) — every architectural decision (ADR-001
-  through ADR-015) with rationale.
-- Component READMEs:
+- [**Solutions architecture document**](docs/SAD.md) — start here for
+  the full design.
+- [**Acceptance criteria**](docs/Acceptance_Criteria.md) — the source
+  of truth for "done".
+- [**Architecture decision records**](docs/adr/) — every locked
+  decision with rationale (ADR-001 through ADR-015).
+- [**C4 + sequence + state diagrams**](docs/) — `*.png` files render
+  the system at every level (context, container, component, data flow).
+- Component-level READMEs:
   - [`bench/README.md`](bench/README.md)
   - [`ci/conformance/README.md`](ci/conformance/README.md)
   - [`studio/agent/README.md`](studio/agent/README.md)
@@ -365,9 +375,41 @@ emits `::error` annotations against the offending evidence files.
 
 ---
 
-## Licensing
+## Patent and licensing
 
-The codec implements US Patent 10,827,161 B2 (cited inline at every
-relevant code site). Library code is licensed under the project's
-top-level `LICENSE` file; vendored test fixtures (e.g. `ryg_rans` in
-`codec/tests/vectors/`) carry their own attribution.
+SCC implements **US Patent 10,827,161 B2**, "Method for Real-Time
+Compression of 3D Video Streaming Frames", owned by Djinn Technologies
+Ltd. The patent is cited inline at every relevant code site (search
+for `[US10827161B2 col. N]`). Use of SCC in jurisdictions where this
+patent is in force may require a separate patent licence — contact
+Djinn Technologies for terms.
+
+Source code is distributed under the project's top-level
+[`LICENSE`](LICENSE). Vendored third-party code carries its own
+attribution; see [`codec/tests/vectors/`](codec/tests/vectors/) for
+`ryg_rans` (public domain, used as a reference oracle for byte-equality
+tests only — not linked into the runtime).
+
+---
+
+## Contributing
+
+Contributions are welcome. Before opening a PR:
+
+1. Run the codec tests (`ctest --test-dir build`) and ensure they pass
+   with `cmake --preset asan`.
+2. If you touch a SAD-traced requirement, update or add a YAML case
+   under [`ci/conformance/cases/`](ci/conformance/cases/) and verify
+   `python ci/conformance/run.py --no-execute` lints clean.
+3. Run `bench/run-quick.sh` if you've changed any code under
+   `codec/src/` to confirm there's no performance regression.
+4. New architectural decisions land as a new ADR under
+   [`docs/adr/`](docs/adr/).
+
+The full contributor workflow lives in
+[`docs/SAD.md` §16](docs/SAD.md#16-development-workflow).
+
+---
+
+*Maintained by [Djinn Technologies Ltd.](https://djinn.tech) — a
+subsidiary of Akuma Engineering Ltd.*
