@@ -27,14 +27,22 @@ endif()
 # Windows: scc.dll is built in cabi/ but the test exe lives in cabi/tests/.
 # Copy the DLL (and any other transitive runtime DLLs) next to the test
 # binary so Windows' loader finds it. CMake 3.21+ exposes
-# $<TARGET_RUNTIME_DLLS> which is the canonical mechanism. On non-Windows
-# platforms TARGET_RUNTIME_DLLS is empty and the command is a no-op.
-add_custom_command(TARGET test_libscc POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_RUNTIME_DLLS:test_libscc>
-        $<TARGET_FILE_DIR:test_libscc>
-    COMMAND_EXPAND_LISTS
-)
+# $<TARGET_RUNTIME_DLLS> which is the canonical mechanism.
+#
+# Gate this on WIN32: on Linux/macOS, $<TARGET_RUNTIME_DLLS:test_libscc>
+# expands to an empty list, which COMMAND_EXPAND_LISTS turns into zero
+# arguments -- leaving `cmake -E copy_if_different` with only the
+# destination, which then fails with the cmake -E usage banner. Linux
+# uses RPATH (set by CMake when the shared lib is in a sibling
+# directory) so no copy is needed at all.
+if(WIN32)
+    add_custom_command(TARGET test_libscc POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:test_libscc>
+            $<TARGET_FILE_DIR:test_libscc>
+        COMMAND_EXPAND_LISTS
+    )
+endif()
 
 include(Catch)
 catch_discover_tests(test_libscc

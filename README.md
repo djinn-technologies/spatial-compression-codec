@@ -380,15 +380,23 @@ GitHub Actions wires both into CI; see [`.github/workflows/`](.github/workflows/
 SCC implements **US Patent 10,827,161 B2**, "Method for Real-Time
 Compression of 3D Video Streaming Frames", owned by Djinn Technologies
 Ltd. The patent is cited inline at every relevant code site (search
-for `[US10827161B2 col. N]`). Use of SCC in jurisdictions where this
-patent is in force may require a separate patent licence — contact
-Djinn Technologies for terms.
+for `[US10827161B2 col. N]`).
 
-Source code is distributed under the project's top-level
-[`LICENSE`](LICENSE). Vendored third-party code carries its own
-attribution; see [`codec/tests/vectors/`](codec/tests/vectors/) for
-`ryg_rans` (public domain, used as a reference oracle for byte-equality
-tests only — not linked into the runtime).
+Source code is distributed under the **Spatial Compression Codec
+Source-Available Reference License** ([`LICENSE.md`](LICENSE.md)) — a
+source-available licence that permits reading, study, internal
+evaluation (60 days), non-commercial research, and contribution back,
+but **does not grant patent rights**. Production deployment,
+distribution, hosted-service use, and any other Commercial Use
+require a separate written patent licence from Djinn.
+
+If you are unsure whether your intended use is permitted, please
+contact Djinn before proceeding (`licensing@djinn.cloud`).
+
+Vendored third-party code carries its own attribution; see
+[`codec/tests/vectors/`](codec/tests/vectors/) for `ryg_rans` (public
+domain, used as a byte-equality reference oracle at test-build time
+only — not linked into the runtime).
 
 ---
 
@@ -411,5 +419,6 @@ The full contributor workflow lives in
 
 ---
 
-*Maintained by [Djinn Technologies Ltd.](https://djinn.tech) — a
-subsidiary of Akuma Engineering Ltd.*
+*Maintained by [Djinn Technologies Ltd.](https://djinn.cloud) — a
+subsidiary of Akuma Engineering Ltd.
+Company No. 13918535 (registered in England and Wales).*
