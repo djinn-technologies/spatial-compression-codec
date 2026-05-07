@@ -1,0 +1,61 @@
+%%{init: {'theme':'neutral'}}%%
+flowchart TB
+    user["👤 Capture / Viewer"]:::actor
+
+    subgraph scc["Spatial Compression Codec — System Boundary"]
+
+        subgraph corelib["libscc — Core Codec Library (C++17)"]
+            enc["scc_encoder<br/>[static lib]"]:::container
+            dec["scc_decoder<br/>[static lib]"]:::container
+            common["scc_common<br/>(disparity, rANS, quad-tree)"]:::container
+        end
+
+        subgraph sdk["SCC SDK"]
+            csdk["C ABI shim<br/>(libscc.so / .dll / .dylib)"]:::container
+            tssdk["TypeScript / WASM bindings<br/>(@djinn/scc-wasm)"]:::container
+            pysdk["Python bindings<br/>(scc-py via pybind11)"]:::container
+            uesdk["Unity / UE plugin<br/>(NativePlugin wrapper)"]:::container
+        end
+
+        subgraph app["Reference App — SCC Studio"]
+            web["Web Frontend<br/>(React + WebGPU)"]:::container
+            agent["Capture Agent<br/>(Rust, native)"]:::container
+            api["Control-plane API<br/>(Node.js / Fastify)"]:::container
+        end
+
+        subgraph data["Data Plane"]
+            queue[["Frame Queue<br/>(in-process ring buffer)"]]:::queue
+            cfg[("Config &amp; Profiles<br/>(SQLite / JSON)")]:::datastore
+            cache[("Recorded Streams<br/>(local disk / S3)")]:::datastore
+        end
+    end
+
+    sensor["RGB-D Sensor"]:::external
+    h264["H.264 Encoder<br/>(libx264 / NVENC)"]:::external
+    sfu["WebRTC SFU"]:::external
+
+    user -->|HTTPS| web
+    web -->|REST + WS| api
+    api -->|spawn / IPC| agent
+    agent --> queue
+    queue --> enc
+    sensor -->|UVC / SDK| agent
+    enc --> common
+    dec --> common
+    enc -->|SEI payload| h264
+    h264 -->|H.264 NAL units| sfu
+    sfu -->|H.264 + SEI| dec
+    dec --> tssdk
+    tssdk --> web
+    csdk -.wraps.-> enc
+    csdk -.wraps.-> dec
+    pysdk -.wraps.-> csdk
+    uesdk -.wraps.-> csdk
+    api --> cfg
+    agent --> cache
+
+    classDef actor fill:#08427B,color:#fff,stroke:#052E56
+    classDef container fill:#1168BD,color:#fff,stroke:#0B4884
+    classDef datastore fill:#1168BD,color:#fff,stroke:#0B4884
+    classDef queue fill:#1168BD,color:#fff,stroke:#0B4884
+    classDef external fill:#999999,color:#fff,stroke:#6B6B6B

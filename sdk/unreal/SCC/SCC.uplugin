@@ -1,0 +1,38 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0.0",
+    "FriendlyName": "SCC — Spatial Compression Codec",
+    "Description": "Encode and decode H.264-compatible depth-frame SEI payloads in Unreal Engine. Wraps the libscc C ABI with a Blueprint-friendly UActorComponent surface. [REQ-029]",
+    "Category": "Media",
+    "CreatedBy": "Djinn",
+    "CreatedByURL": "https://example.com",
+    "DocsURL": "https://example.com/spatial-compression-codec/sdk/unreal",
+    "MarketplaceURL": "",
+    "SupportURL": "https://example.com/spatial-compression-codec/issues",
+    "EngineVersion": "5.3.0",
+    "EnabledByDefault": true,
+    "CanContainContent": true,
+    "IsBetaVersion": false,
+    "IsExperimentalVersion": false,
+    "Installed": false,
+    "Modules": [
+        {
+            "Name": "SCC",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+            "PlatformAllowList": [
+                "Win64",
+                "Linux",
+                "Mac",
+                "Android",
+                "IOS"
+            ]
+        }
+    ],
+    "Marketplace": {
+        "FabIdentifier": "00000000-0000-0000-0000-000000000000",
+        "ItemType": "Plugin",
+        "Comment": "FabIdentifier is filled in on submission to the Epic Fab marketplace; the all-zero UUID here is a placeholder. See README §Distribution."
+    }
+}

@@ -1,0 +1,50 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.4, ranksep=0.55, compound=true];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  subgraph cluster_cabi {
+    label="libscc — Stable C ABI"; style="rounded,dashed"; color="#0B4884";
+    cinit    [label="scc_init() / scc_destroy()"];
+    cenc     [label="scc_encode_frame(rgb*, depth*, profile)"];
+    cdec     [label="scc_decode_sei(sei*, out*)"];
+    cparam   [label="scc_set_param() / scc_get_param()"];
+    cprofile [label="scc_load_profile() / scc_save_profile()"];
+    cerr     [label="scc_get_last_error()"];
+  }
+
+  subgraph cluster_wasm {
+    label="WASM Binding (TypeScript)"; style="rounded,dashed"; color="#0B4884";
+    wcore   [label="scc-wasm core (.wasm)"];
+    wts     [label="TS facade\n(SCCEncoder / SCCDecoder)"];
+    wstream [label="ReadableStream / TransformStream adapters"];
+  }
+
+  subgraph cluster_py {
+    label="Python Binding"; style="rounded,dashed"; color="#0B4884";
+    pycore [label="pybind11 bridge"];
+    pyapi  [label="scc_py.encode() / decode()"];
+    pynp   [label="NumPy zero-copy interop"];
+  }
+
+  subgraph cluster_game {
+    label="Game-Engine Plugins"; style="rounded,dashed"; color="#0B4884";
+    unity  [label="Unity NativePlugin\n(C# wrapper + IL2CPP)"];
+    unreal [label="Unreal Engine Plugin\n(UPROPERTY + Blueprint nodes)"];
+  }
+
+  cinit -> cenc;
+  cinit -> cdec;
+  cparam -> cenc;
+  cparam -> cdec;
+  cprofile -> cparam;
+  cerr -> cenc [style=dashed];
+  cerr -> cdec [style=dashed];
+  wcore -> wts -> wstream;
+  wcore -> cenc [style=dashed, label="compiled from"];
+  pycore -> cenc [style=dashed, label="binds"];
+  pyapi -> pycore -> pynp;
+  unity  -> cenc [style=dashed, label="P/Invoke"];
+  unreal -> cenc [style=dashed, label="FFI"];
+}

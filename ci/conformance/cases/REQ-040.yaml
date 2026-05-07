@@ -1,0 +1,15 @@
+# REQ-040 — C ABI surface stability.
+
+id: REQ-040
+description: libscc C ABI baseline diff is empty (no symbol drift since the last release).
+sad_section: "§F. C ABI"
+evidence: "[Brief]; ADR-006"
+evidence_paths:
+  - cabi/include/scc/scc.h
+  - cabi/src
+  - cabi/abi-baseline.json
+test_command: "ctest --test-dir build -R abi_baseline --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 30
+blocking: true

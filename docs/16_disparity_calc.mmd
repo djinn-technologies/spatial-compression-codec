@@ -1,0 +1,17 @@
+flowchart TB
+    in["Depth Frame d[i,j]<br/>(W × H, bit-depth N)"]:::input
+    init["Init S matrix<br/>(W × H, signed)"]:::process
+    anchor["s[1,1] = d[1,1]<br/>(absolute anchor)"]:::process
+    row1["For j = 2..W:<br/>s[1,j] = d[1,j] − d[1,j-1]<br/>(top-row horizontal)"]:::process
+    rest["For i = 2..H, j = 1..W:<br/>s[i,j] = d[i,j] − d[i-1,j]<br/>(column-wise vertical)"]:::process
+    out["Disparity Matrix S<br/>(near-zero values dominate<br/>where rows are similar)"]:::output
+
+    in --> init
+    init --> anchor
+    anchor --> row1
+    row1 --> rest
+    rest --> out
+
+    classDef input fill:#27AE60,color:#fff
+    classDef output fill:#C0392B,color:#fff
+    classDef process fill:#1168BD,color:#fff

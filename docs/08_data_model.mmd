@@ -1,0 +1,77 @@
+erDiagram
+    DEPTH_FRAME ||--|| DISPARITY_MATRIX : "produces"
+    DISPARITY_MATRIX ||--|{ TOP_LIST : "decomposes_into"
+    DISPARITY_MATRIX ||--|{ R_LIST : "decomposes_into"
+    DISPARITY_MATRIX ||--|| B_MATRIX : "decomposes_into"
+    DEPTH_FRAME ||--o| MOVEMENT_REGION_MAP : "annotated_by"
+    MOVEMENT_REGION_MAP ||--|{ QUAD_REGION : "contains"
+    QUAD_REGION ||--|| INTERLACE_PATTERN : "uses"
+    SCC_BITSTREAM ||--|| SEI_HEADER : "starts_with"
+    SCC_BITSTREAM ||--|{ ENCODED_FRAME : "contains"
+    ENCODED_FRAME ||--|| TOP_LIST : "wraps"
+    ENCODED_FRAME ||--|| R_LIST : "wraps"
+    ENCODED_FRAME ||--|| B_MATRIX : "wraps"
+    ENCODED_FRAME ||--|| QUAD_REGION : "wraps"
+
+    DEPTH_FRAME {
+        uint32 width
+        uint32 height
+        uint8  bit_depth "8 / 12 / 16"
+        uint64 timestamp_us
+        uint16 frame_index
+        bytes  pixels "row-major"
+    }
+    DISPARITY_MATRIX {
+        uint32 width
+        uint32 height
+        int16  s_1_1 "anchor"
+        bytes  s_values "row-prefix differences"
+    }
+    TOP_LIST {
+        uint8  count "typically 4"
+        uint16 values "high-frequency disparities (85-98 percent)"
+    }
+    R_LIST {
+        uint32 count
+        int16  values "remainder, full 16 bit"
+    }
+    B_MATRIX {
+        uint32 width
+        uint32 height
+        bit    flag "0=TOP, 1=R"
+    }
+    MOVEMENT_REGION_MAP {
+        uint8  depth "quad-tree depth"
+        uint16 root_size_px
+    }
+    QUAD_REGION {
+        uint16 x
+        uint16 y
+        uint16 size
+        uint8  motion_class "0=static, 1=low, 2=high"
+        uint8  pattern_id
+    }
+    INTERLACE_PATTERN {
+        uint8  pattern_id
+        uint8  bitmask "e.g., 10110111"
+        uint8  update_period
+    }
+    SEI_HEADER {
+        uuid   payload_uuid "SCC marker UUID"
+        uint8  version_major
+        uint8  version_minor
+        uint16 width
+        uint16 height
+        uint8  bit_depth
+        uint8  mode_flags "lossless / lossy / motion-on"
+    }
+    SCC_BITSTREAM {
+        bytes data "rANS-packed payload"
+        uint32 size_bytes
+        uint16 fps
+    }
+    ENCODED_FRAME {
+        uint32 byte_offset
+        uint32 byte_length
+        uint64 pts_us
+    }

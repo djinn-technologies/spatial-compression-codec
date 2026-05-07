@@ -1,0 +1,36 @@
+flowchart LR
+    cabi["libscc (C ABI)"]
+    enc["scc_encoder"]
+    dec["scc_decoder"]
+    common["scc_common"]
+    rans["rans (8/16)"]
+    quad["quadtree"]
+    disp["disparity"]
+    sei["sei_codec"]
+    wasm["scc-wasm"]
+    py["scc-py"]
+    unity["scc-unity"]
+    unreal["scc-unreal"]
+    studio_fe["studio-frontend (React)"]
+    studio_api["studio-api (Node)"]
+    studio_agent["studio-agent (Rust)"]
+    bench["scc-bench"]
+    fixtures["scc-fixtures"]
+
+    enc --> common
+    dec --> common
+    common --> rans
+    common --> quad
+    common --> disp
+    common --> sei
+    cabi --> enc
+    cabi --> dec
+    wasm --> cabi
+    py --> cabi
+    unity --> cabi
+    unreal --> cabi
+    studio_fe --> wasm
+    studio_agent --> cabi
+    studio_api --> studio_agent
+    bench --> cabi
+    bench --> fixtures

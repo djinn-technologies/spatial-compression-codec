@@ -1,0 +1,39 @@
+flowchart LR
+    sensor[("RGB-D Sensor")]
+    rgb["RGB stream"]
+    depth["Depth stream<br/>(12 / 16 bpp)"]
+
+    subgraph capture["Capture Path"]
+        filter["Depth filter"]
+        s_calc["Disparity matrix S"]
+        motion["Motion detection<br/>+ quad-tree"]
+        interlace["Interlace pattern<br/>application"]
+        rans_e["rANS encode<br/>(TOP / B / R)"]
+        sei_pack["SEI packer"]
+        h264_e["H.264 encoder"]
+    end
+
+    bitstream["H.264 bitstream<br/>(RGB NALs + SCC SEIs)"]
+    transport["Transport:<br/>WebRTC / RTMP / .mp4 file"]
+
+    subgraph play["Playback Path"]
+        h264_d["H.264 decoder"]
+        sei_unpack["SEI unpacker"]
+        rans_d["rANS decode"]
+        s_inv["Inverse S → depth"]
+        interp["Interlace fill /<br/>interpolation"]
+        out_rgb["RGB frame"]
+        out_depth["Depth frame"]
+        render["3D Renderer<br/>(WebGPU / Unity / Unreal)"]
+    end
+
+    sensor --> rgb
+    sensor --> depth
+    rgb --> h264_e
+    depth --> filter --> s_calc --> motion --> interlace --> rans_e --> sei_pack
+    sei_pack --> h264_e
+    h264_e --> bitstream --> transport --> h264_d
+    h264_d --> out_rgb
+    h264_d --> sei_unpack --> rans_d --> s_inv --> interp --> out_depth
+    out_rgb --> render
+    out_depth --> render

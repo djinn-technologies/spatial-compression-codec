@@ -1,0 +1,55 @@
+{
+  "name": "@djinn/scc-wasm",
+  "version": "1.0.0",
+  "description": "WebAssembly binding for the Spatial Compression Codec (SCC). Encode/decode H.264-compatible depth-frame SEI payloads in Node 20+ and Chromium 113+.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./scc.wasm": "./dist/scc.wasm"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build:wasm": "bash emscripten/build.sh",
+    "build:ts": "tsc -p tsconfig.json",
+    "build": "npm run build:wasm && npm run build:ts",
+    "test": "vitest run --reporter=verbose",
+    "test:browser": "playwright test",
+    "size": "bash emscripten/check-size.sh",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "@types/node": "^20.12.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "depth",
+    "compression",
+    "codec",
+    "wasm",
+    "webassembly",
+    "h264",
+    "sei",
+    "rans",
+    "webcodecs"
+  ]
+}

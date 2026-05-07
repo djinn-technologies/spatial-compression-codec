@@ -1,0 +1,37 @@
+{
+    "name": "com.djinn.scc",
+    "version": "1.0.0",
+    "displayName": "SCC — Spatial Compression Codec",
+    "description": "Encode and decode H.264-compatible depth-frame SEI payloads in Unity. Wraps the libscc C ABI with NativeArray-friendly C# APIs. [REQ-029]",
+    "unity": "2022.3",
+    "documentationUrl": "https://example.com/spatial-compression-codec/sdk/unity",
+    "changelogUrl": "https://example.com/spatial-compression-codec/sdk/unity/CHANGELOG.md",
+    "licensesUrl": "https://example.com/spatial-compression-codec/sdk/unity/LICENSE.md",
+    "dependencies": {
+        "com.unity.collections": "1.5.1",
+        "com.unity.burst": "1.8.12",
+        "com.unity.test-framework": "1.4.3"
+    },
+    "samples": [
+        {
+            "displayName": "Basic Capture",
+            "description": "Encode → decode → visualise as a Unity Mesh point cloud. Demonstrates round-trip integration with NativeArray buffers.",
+            "path": "Samples~/BasicCapture"
+        }
+    ],
+    "keywords": [
+        "depth",
+        "compression",
+        "codec",
+        "h264",
+        "sei",
+        "rans",
+        "spatial",
+        "point-cloud"
+    ],
+    "author": {
+        "name": "Djinn",
+        "email": "support@example.com",
+        "url": "https://example.com"
+    }
+}

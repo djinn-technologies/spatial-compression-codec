@@ -1,0 +1,2 @@
+Drop libscc.dylib here (universal binary covering x86_64 + arm64).
+Built by build-plugins.sh macos-universal.

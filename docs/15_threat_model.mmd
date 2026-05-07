@@ -1,0 +1,33 @@
+flowchart TB
+    user["👤 Operator / Viewer"]
+
+    subgraph trust1["Trust Boundary: Public Internet (untrusted)"]
+        cdn["CDN (FE assets, WASM)"]
+        sfu["WebRTC SFU"]
+    end
+
+    subgraph trust2["Trust Boundary: Application Tier (semi-trusted)"]
+        api["Control-plane API"]
+        agent["Capture Agent (on-host)"]
+    end
+
+    subgraph trust3["Trust Boundary: Data Tier (trusted)"]
+        rds[("PostgreSQL")]
+        s3[("S3 (KMS-encrypted)")]
+        kms["AWS KMS"]
+    end
+
+    sensor["RGB-D Sensor (USB)"]
+
+    user -- HTTPS/TLS1.3 --> cdn
+    user -- HTTPS/WSS --> api
+    cdn -- "FE bundle (signed)" --> user
+    sensor -- USB / UVC --> agent
+    agent -- "QUIC + DTLS-SRTP" --> sfu
+    sfu -- "QUIC" --> user
+    api -- "TLS + auth (JWT)" --> agent
+    api -- "TLS" --> rds
+    api -- "TLS + SigV4" --> s3
+    s3 -- "KMS unwrap" --> kms
+
+    %% STRIDE annotations rendered in surrounding text

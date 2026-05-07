@@ -1,0 +1,40 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor="white", fontname="Helvetica", fontsize=11, nodesep=0.4, ranksep=0.55, splines=true];
+  node  [fontname="Helvetica", fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor="white", margin=0.16];
+  edge  [fontname="Helvetica", fontsize=8];
+
+  raw [label="Raw Depth Frame\n(W x H, 12/16 bpp)", fillcolor="#27AE60"];
+  sei [label="H.264 SEI NAL Unit", fillcolor="#C0392B"];
+
+  subgraph cluster_enc {
+    label="scc_encoder"; style="rounded,dashed"; color="#0B4884"; fontsize=11;
+
+    filter   [label="DepthFilter\n(median / bilateral / hole-fill)"];
+    quant    [label="BitDepthAdapter\n(8 / 12 / 16)"];
+    disp     [label="DisparityMatrixBuilder\n(S = d_i,j - d_i-1,j)"];
+    movedet  [label="MovementDetector\n(delta-frame analysis)"];
+    quad     [label="QuadTreeRegionMap\n(static / low / high motion)"];
+    pattern  [label="InterlacePatternSelector\n(per-region bitmask, e.g. 10110111)"];
+    topb     [label="FrequencyAnalyser\n(TOP / R / B list builder)"];
+    rans8    [label="rANS-8 Encoder\n(TOP + B)"];
+    rans16   [label="rANS-16 Encoder\n(R)"];
+    seimux   [label="SEIPayloadMuxer\n(user_data_unregistered)"];
+    ratectl  [label="RateController\n(lossy <-> lossless)"];
+  }
+
+  raw -> filter -> quant;
+  quant -> disp;
+  quant -> movedet -> quad -> pattern;
+  pattern -> disp;
+  disp -> topb;
+  topb -> rans8;
+  topb -> rans16;
+  rans8 -> seimux;
+  rans16 -> seimux;
+  pattern -> seimux;
+  quad -> seimux;
+  ratectl -> filter;
+  ratectl -> pattern;
+  seimux -> sei;
+}

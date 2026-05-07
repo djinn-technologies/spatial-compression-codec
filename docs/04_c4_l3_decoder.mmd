@@ -1,0 +1,37 @@
+%%{init: {'theme':'neutral'}}%%
+flowchart TB
+    sei["H.264 SEI NAL Unit<br/>(user_data_unregistered)"]:::input
+
+    subgraph dec["scc_decoder — Component View"]
+        seidemux["SEIPayloadDemuxer<br/>(uuid match, header parse)"]:::component
+        headerp["FrameHeaderParser<br/>(W, H, bit depth, mode flags)"]:::component
+        rans8d["rANS-8 Decoder<br/>(TOP + B lists)"]:::component
+        rans16d["rANS-16 Decoder<br/>(R list)"]:::component
+        topbm["ListMerger<br/>(B-mask drives TOP/R selection)"]:::component
+        dispr["DisparityReconstructor<br/>(row-prefix sum, inverse S)"]:::component
+        quadr["QuadTreeRegionReader<br/>(rebuild region map)"]:::component
+        interp["PixelInterpolator<br/>(reconstruct skipped pixels)"]:::component
+        cache["FrameCache<br/>(prev frame for delta-update)"]:::component
+        outfmt["DepthOutputFormatter<br/>(R32F / R16U / R8U)"]:::component
+    end
+
+    out["Reconstructed Depth Frame"]:::output
+
+    sei --> seidemux
+    seidemux --> headerp
+    seidemux --> rans8d
+    seidemux --> rans16d
+    seidemux --> quadr
+    rans8d --> topbm
+    rans16d --> topbm
+    topbm --> dispr
+    quadr --> interp
+    dispr --> interp
+    cache --> interp
+    interp --> outfmt
+    outfmt --> out
+    outfmt --> cache
+
+    classDef component fill:#1168BD,color:#fff,stroke:#0B4884
+    classDef input fill:#27AE60,color:#fff,stroke:#1E8449
+    classDef output fill:#C0392B,color:#fff,stroke:#922B21

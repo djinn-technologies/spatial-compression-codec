@@ -1,0 +1,2 @@
+Drop the iOS arm64 libscc.a (static archive) here. iOS forbids dynamic
+loading; the archive is linked into the IL2CPP build.

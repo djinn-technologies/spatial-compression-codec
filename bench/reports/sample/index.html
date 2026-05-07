@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>scc-bench sample report</title>
+<style>
+  :root { --brand:#0B4884; --accent:#1168BD; --muted:#475569; --bg:#F5F7FA; --ink:#0F172A; }
+  body { font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); margin:24px; }
+  h1 { color: var(--brand); margin-top: 0; }
+  h2 { color: var(--brand); margin-top: 28px; }
+  table { border-collapse: collapse; width:100%; background:#fff; border-radius:6px; overflow:hidden; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: var(--brand); color: #fff; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ok { color: #047857; }
+  .meta dl { display:grid; grid-template-columns: max-content 1fr; gap: 4px 16px; max-width: 600px; }
+  .meta dt { font-weight: 600; }
+  .note { background: #fef3c7; padding: 12px 16px; border-radius: 6px; margin: 16px 0; }
+  code { background: #e2e8f0; padding: 1px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>scc-bench &mdash; sample report</h1>
+
+<div class="note">
+  <strong>What this is.</strong> A representative <code>scc-bench</code>
+  output for the 320&times;240 / 12-bit synthetic corpus, lossless
+  profile, 5-run median, all five codecs. The numbers below are
+  <em>illustrative</em> &mdash; reproducing on your hardware will
+  yield different absolute throughput but the relative ordering should
+  be stable.
+</div>
+
+<section class="meta"><dl>
+<dt>SCC version</dt><dd>scc-bench/1.0</dd>
+<dt>Host</dt><dd>example-ryzen-5600x-linux</dd>
+<dt>Compiler</dt><dd>gcc 13.2</dd>
+<dt>Build type</dt><dd>Release-like (NDEBUG defined)</dd>
+<dt>Seed</dt><dd>0xC0FFEE</dd>
+<dt>Runs</dt><dd>5 (median reported)</dd>
+<dt>Pinned</dt><dd>yes</dd>
+</dl></section>
+
+<h2>Lossless profile, 320&times;240, 12-bit</h2>
+<table>
+  <thead><tr>
+    <th>codec</th><th>sequence</th>
+    <th>enc fps (st)</th><th>dec fps (st)</th>
+    <th>enc fps (mt)</th><th>dec fps (mt)</th>
+    <th>ratio</th><th>PSNR dB</th><th>SSIM</th><th>PC diff %</th>
+  </tr></thead>
+  <tbody>
+    <tr><td>scc</td><td>moving_plane</td>
+        <td class="num">312</td><td class="num">358</td>
+        <td class="num">925</td><td class="num">1115</td>
+        <td class="num">0.28</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>scc</td><td>static_room</td>
+        <td class="num">285</td><td class="num">342</td>
+        <td class="num">855</td><td class="num">1062</td>
+        <td class="num">0.39</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>scc</td><td>textured_sphere</td>
+        <td class="num">293</td><td class="num">347</td>
+        <td class="num">880</td><td class="num">1090</td>
+        <td class="num">0.43</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>jpeg2000</td><td>moving_plane</td>
+        <td class="num">42</td><td class="num">61</td>
+        <td class="num">120</td><td class="num">170</td>
+        <td class="num">0.36</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>png</td><td>moving_plane</td>
+        <td class="num">88</td><td class="num">155</td>
+        <td class="num">240</td><td class="num">410</td>
+        <td class="num">0.51</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>tiff</td><td>moving_plane</td>
+        <td class="num">130</td><td class="num">200</td>
+        <td class="num">370</td><td class="num">540</td>
+        <td class="num">0.55</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+    <tr><td>zlib</td><td>moving_plane</td>
+        <td class="num">220</td><td class="num">410</td>
+        <td class="num">600</td><td class="num">1100</td>
+        <td class="num">0.62</td><td class="num">&infin;</td>
+        <td class="num">1.000</td><td class="num">0.00</td></tr>
+  </tbody>
+</table>
+
+<h2>How to read this report</h2>
+<dl>
+  <dt><strong>enc/dec fps (st)</strong></dt>
+  <dd>Single-thread frames per second, median of 5 pinned-core runs.</dd>
+  <dt><strong>enc/dec fps (mt)</strong></dt>
+  <dd>Multi-thread wall-clock frames per second across <code>min(8, hw_concurrency)</code> workers.</dd>
+  <dt><strong>ratio</strong></dt>
+  <dd>Total payload bytes divided by total raw bytes; smaller is better. <code>0.30</code> means a 3.3:1 compression.</dd>
+  <dt><strong>PSNR / SSIM</strong></dt>
+  <dd>Quality vs ground truth. For lossless profiles PSNR is &infin; (RMSE = 0).</dd>
+  <dt><strong>PC diff %</strong></dt>
+  <dd>Fraction of pixels whose reprojected 3D position moved more than 5 mm under the codec's reconstruction.</dd>
+</dl>
+</body></html>

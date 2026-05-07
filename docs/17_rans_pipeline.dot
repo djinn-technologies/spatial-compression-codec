@@ -1,0 +1,21 @@
+digraph rANS {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.35, ranksep=0.5];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  s     [label="Disparity Matrix S\n(flattened, raster scan)", fillcolor="#27AE60"];
+  hist  [label="Frequency histogram\nover S values"];
+  pick  [label="Select TOP-x most frequent\n(typically x = 4 → ≈85–98% coverage)"];
+  split [label="Split S into:\n• TOP[i] — index into top-list\n• R[k] — remainder values\n• B[i,j] — boolean (which list)"];
+  e1    [label="rANS-8 encoder\n(TOP indices,\nalphabet ≤ 256)"];
+  e2    [label="rANS-8 encoder\n(B mask,\nbinary alphabet)"];
+  e3    [label="rANS-16 encoder\n(R values, full int16)"];
+  pack  [label="Pack frame:\n[hdr][TOP-tab][rANS-TOP]\n[rANS-B][rANS-R]"];
+  out   [label="Compressed payload\n→ SEI muxer", fillcolor="#C0392B"];
+
+  s->hist->pick->split;
+  split->e1; split->e2; split->e3;
+  e1->pack; e2->pack; e3->pack;
+  pack->out;
+}

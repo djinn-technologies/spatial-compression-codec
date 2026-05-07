@@ -1,0 +1,35 @@
+# Conformance case template. Copy to REQ-NNN.yaml, fill in, commit.
+#
+# Field reference:
+#   id              REQ-NNN matching docs/Acceptance_Criteria.md
+#   description     one-liner mirroring the requirement (max ~120 chars)
+#   sad_section     SAD heading the REQ lives under (e.g. "§4.2 rANS")
+#   evidence        citation: patent col, standard clause, paper section
+#   evidence_paths  list of file/glob paths; --bisect uses these
+#   test_command    shell command, runs in repo root
+#                   USE DOUBLE QUOTES for cross-platform shell quoting
+#                   (cmd.exe on Windows treats single quotes as literal)
+#   pass_criteria_type     exit_code | regex | numeric
+#   pass_criteria_expected (exit_code only) integer expected
+#   pass_criteria_pattern  (regex/numeric) re-module pattern; for numeric,
+#                          the FIRST capture group is parsed as a float
+#   pass_criteria_stream   stdout | stderr | both    (default: both)
+#   pass_criteria_comparator (numeric) one of >  >=  <  <=  ==  !=
+#   pass_criteria_threshold  (numeric) reference value
+#   timeout_seconds  per-case wallclock budget (default: 120)
+#   blocking         true | false (false = informative only)
+#   skip_reason      optional; if set, the runner emits SKIP without
+#                    spawning the test_command
+
+id: REQ-000
+description: replace with the requirement text
+sad_section: "§? Section title"
+evidence: "[Patent col. N] / [H.264 §X] / [Brief]"
+evidence_paths:
+  - codec/include/scc/some_header.hpp
+  - codec/src/some_dir
+test_command: "echo replace this command"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 60
+blocking: true

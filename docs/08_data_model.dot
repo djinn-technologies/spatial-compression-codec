@@ -1,0 +1,42 @@
+digraph ER {
+  rankdir=LR;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, splines=true, nodesep=0.5, ranksep=0.7];
+  node  [fontname=Helvetica, fontsize=9, shape=plaintext];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  DEPTH_FRAME [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>DEPTH_FRAME</b></font></td></tr><tr><td><font color="white">width</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">height</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">bit_depth</font></td><td><font color="white">uint8 (8/12/16)</font></td></tr><tr><td><font color="white">timestamp_us</font></td><td><font color="white">uint64</font></td></tr><tr><td><font color="white">frame_index</font></td><td><font color="white">uint16</font></td></tr><tr><td><font color="white">pixels</font></td><td><font color="white">bytes (row-major)</font></td></tr></table>>];
+
+  DISPARITY_MATRIX [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>DISPARITY_MATRIX (S)</b></font></td></tr><tr><td><font color="white">width</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">height</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">s_1_1</font></td><td><font color="white">int16 (anchor)</font></td></tr><tr><td><font color="white">s_values</font></td><td><font color="white">bytes (row-prefix diffs)</font></td></tr></table>>];
+
+  TOP_LIST [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>TOP_LIST</b></font></td></tr><tr><td><font color="white">count</font></td><td><font color="white">uint8 (typ. 4)</font></td></tr><tr><td><font color="white">values</font></td><td><font color="white">uint16[] (85-98% coverage)</font></td></tr></table>>];
+
+  R_LIST [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>R_LIST</b></font></td></tr><tr><td><font color="white">count</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">values</font></td><td><font color="white">int16[] (remainder)</font></td></tr></table>>];
+
+  B_MATRIX [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>B_MATRIX</b></font></td></tr><tr><td><font color="white">width</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">height</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">flag</font></td><td><font color="white">bit (0=TOP, 1=R)</font></td></tr></table>>];
+
+  MOVEMENT_REGION_MAP [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>MOVEMENT_REGION_MAP</b></font></td></tr><tr><td><font color="white">depth</font></td><td><font color="white">uint8</font></td></tr><tr><td><font color="white">root_size_px</font></td><td><font color="white">uint16</font></td></tr></table>>];
+
+  QUAD_REGION [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>QUAD_REGION</b></font></td></tr><tr><td><font color="white">x, y, size</font></td><td><font color="white">uint16</font></td></tr><tr><td><font color="white">motion_class</font></td><td><font color="white">uint8 (0/1/2)</font></td></tr><tr><td><font color="white">pattern_id</font></td><td><font color="white">uint8</font></td></tr></table>>];
+
+  INTERLACE_PATTERN [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>INTERLACE_PATTERN</b></font></td></tr><tr><td><font color="white">pattern_id</font></td><td><font color="white">uint8</font></td></tr><tr><td><font color="white">bitmask</font></td><td><font color="white">uint8 (e.g. 10110111)</font></td></tr><tr><td><font color="white">update_period</font></td><td><font color="white">uint8</font></td></tr></table>>];
+
+  SEI_HEADER [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>SEI_HEADER</b></font></td></tr><tr><td><font color="white">payload_uuid</font></td><td><font color="white">uuid (SCC marker)</font></td></tr><tr><td><font color="white">version</font></td><td><font color="white">uint8 + uint8</font></td></tr><tr><td><font color="white">w, h</font></td><td><font color="white">uint16</font></td></tr><tr><td><font color="white">bit_depth</font></td><td><font color="white">uint8</font></td></tr><tr><td><font color="white">mode_flags</font></td><td><font color="white">uint8</font></td></tr></table>>];
+
+  SCC_BITSTREAM [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>SCC_BITSTREAM</b></font></td></tr><tr><td><font color="white">data</font></td><td><font color="white">bytes (rANS-packed)</font></td></tr><tr><td><font color="white">size_bytes</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">fps</font></td><td><font color="white">uint16</font></td></tr></table>>];
+
+  ENCODED_FRAME [label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="4" bgcolor="#1168BD"><tr><td bgcolor="#0B4884" colspan="2"><font color="white"><b>ENCODED_FRAME</b></font></td></tr><tr><td><font color="white">byte_offset</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">byte_length</font></td><td><font color="white">uint32</font></td></tr><tr><td><font color="white">pts_us</font></td><td><font color="white">uint64</font></td></tr></table>>];
+
+  DEPTH_FRAME -> DISPARITY_MATRIX [label="produces"];
+  DISPARITY_MATRIX -> TOP_LIST [label="decomposes"];
+  DISPARITY_MATRIX -> R_LIST [label="decomposes"];
+  DISPARITY_MATRIX -> B_MATRIX [label="decomposes"];
+  DEPTH_FRAME -> MOVEMENT_REGION_MAP [label="annotated by"];
+  MOVEMENT_REGION_MAP -> QUAD_REGION [label="contains"];
+  QUAD_REGION -> INTERLACE_PATTERN [label="uses"];
+  SCC_BITSTREAM -> SEI_HEADER [label="starts with"];
+  SCC_BITSTREAM -> ENCODED_FRAME [label="contains"];
+  ENCODED_FRAME -> TOP_LIST [label="wraps"];
+  ENCODED_FRAME -> R_LIST [label="wraps"];
+  ENCODED_FRAME -> B_MATRIX [label="wraps"];
+  ENCODED_FRAME -> QUAD_REGION [label="wraps"];
+}

@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+    participant Net as SFU / File Source
+    participant H264 as H.264 Decoder
+    participant Demux as SCC SEI Demuxer
+    participant Dec as scc_decoder
+    participant rANS as rANS Decoders
+    participant Recon as DisparityReconstructor
+    participant Interp as PixelInterpolator
+    participant Cache as FrameCache
+    participant Out as 3D Renderer (WebGPU)
+
+    Net->>H264: H.264 NAL stream
+    H264->>H264: decode RGB frame
+    H264->>Demux: SEI NAL units (with UUID match)
+    Demux->>Dec: SCC payload (per frame)
+    Dec->>Dec: parse header (W, H, bit-depth, mode flags)
+    Dec->>rANS: decode TOP (8-bit)
+    Dec->>rANS: decode B (8-bit)
+    Dec->>rANS: decode R (16-bit)
+    rANS-->>Dec: TOP, R values + B mask
+    Dec->>Recon: merge lists by B mask
+    Recon->>Recon: row-prefix sum (inverse S)
+    Recon-->>Dec: disparity → depth values (skipped)
+    Dec->>Cache: fetch previous depth frame
+    Cache-->>Dec: prev depth values
+    Dec->>Interp: fill skipped pixels via interlace pattern
+    Interp-->>Dec: full depth frame
+    Dec->>Cache: store as new previous frame
+    H264-->>Out: RGB frame
+    Dec-->>Out: depth frame
+    Out->>Out: composite to point-cloud / mesh, render

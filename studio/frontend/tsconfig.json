@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noFallthroughCasesInSwitch": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "useDefineForClassFields": true,
+        "resolveJsonModule": true,
+        "allowImportingTsExtensions": false,
+        "noEmit": false,
+        "outDir": "./dist-types",
+        "declaration": false,
+        "sourceMap": true,
+        "types": ["@webgpu/types", "vite/client"]
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist", "tests", "tests-e2e"]
+}

@@ -1,0 +1,45 @@
+%%{init: {'theme':'neutral'}}%%
+flowchart TB
+    subgraph cabi["libscc — Stable C ABI"]
+        cinit["scc_init() / scc_destroy()"]:::component
+        cenc["scc_encode_frame(rgb*, depth*, profile)"]:::component
+        cdec["scc_decode_sei(sei*, out*)"]:::component
+        cparam["scc_set_param() / scc_get_param()"]:::component
+        cprofile["scc_load_profile() / scc_save_profile()"]:::component
+        cerr["scc_get_last_error()"]:::component
+    end
+
+    subgraph wasm["WASM Binding (TypeScript)"]
+        wcore["scc-wasm core (.wasm)"]:::component
+        wts["TS facade<br/>(SCCEncoder / SCCDecoder classes)"]:::component
+        wstream["Web ReadableStream / TransformStream adapters"]:::component
+    end
+
+    subgraph py["Python Binding"]
+        pycore["pybind11 bridge"]:::component
+        pyapi["scc_py.encode() / scc_py.decode()"]:::component
+        pynp["NumPy zero-copy interop"]:::component
+    end
+
+    subgraph game["Game-Engine Plugins"]
+        unity["Unity NativePlugin<br/>(C# wrapper + IL2CPP)"]:::component
+        unreal["Unreal Engine Plugin<br/>(UPROPERTY + Blueprint nodes)"]:::component
+    end
+
+    cinit --> cenc
+    cinit --> cdec
+    cparam --> cenc
+    cparam --> cdec
+    cprofile --> cparam
+    cerr -.observed by.- cenc
+    cerr -.observed by.- cdec
+    wcore --> wts
+    wts --> wstream
+    wcore -.compiled from.-> cabi
+    pycore -.binds.-> cabi
+    pyapi --> pycore
+    pynp --> pyapi
+    unity -.P/Invoke.-> cabi
+    unreal -.FFI.-> cabi
+
+    classDef component fill:#1168BD,color:#fff,stroke:#0B4884

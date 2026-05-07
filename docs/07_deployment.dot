@@ -1,0 +1,48 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.4, ranksep=0.55, compound=true];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  internet [label="Internet", shape=circle, fillcolor="#08427B"];
+
+  subgraph cluster_edge {
+    label="Edge / CDN"; style="rounded,dashed"; color="#0B4884";
+    cdn [label="Cloudflare CDN\n(static FE + WASM)", fillcolor="#999999"];
+  }
+
+  subgraph cluster_cloud {
+    label="Cloud — Akuma Engineering AWS account (eu-west-2)"; style="rounded,dashed"; color="#0B4884";
+    subgraph cluster_pub {
+      label="Public Subnet"; style="rounded"; color="#5B7FB6";
+      alb [label="Application Load Balancer\n(TLS 1.3, HSTS)"];
+      sfu [label="WebRTC SFU\n(mediasoup, EC2 m6i.large)"];
+    }
+    subgraph cluster_priv {
+      label="Private Subnet"; style="rounded"; color="#5B7FB6";
+      api1  [label="API Node 1\n(ECS Fargate)"];
+      api2  [label="API Node 2\n(ECS Fargate)"];
+      redis [label="Redis\n(ElastiCache t4g.small)", shape=cylinder];
+      rds   [label="PostgreSQL 16\n(RDS t4g.medium)", shape=cylinder];
+    }
+    s3  [label="S3 Recording Bucket\n(SSE-KMS, lifecycle 90d -> IA)", shape=cylinder];
+    kms [label="AWS KMS\n(per-tenant CMK)", fillcolor="#999999"];
+  }
+
+  subgraph cluster_onprem {
+    label="On-Prem / Edge Devices"; style="rounded,dashed"; color="#0B4884";
+    agentDev [label="Capture Agent\n(Linux/Win/macOS)"];
+    sensor   [label="RGB-D Sensor", fillcolor="#999999"];
+  }
+
+  internet -> cdn; internet -> alb;
+  cdn -> internet [label="FE assets"];
+  alb -> api1; alb -> api2;
+  api1 -> redis; api2 -> redis;
+  api1 -> rds;   api2 -> rds;
+  api1 -> s3;
+  s3 -> kms;
+  sensor -> agentDev;
+  agentDev -> sfu [label="H.264+SEI over QUIC/SRT"];
+  sfu -> internet [label="H.264+SEI"];
+}

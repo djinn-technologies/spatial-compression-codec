@@ -1,0 +1,51 @@
+%%{init: {'theme':'neutral'}}%%
+flowchart TB
+    subgraph fe["SCC Studio — Web Frontend (React)"]
+        shell["AppShell<br/>(routing, theme, auth)"]:::component
+        capPanel["CapturePanel<br/>(sensor select, profile pick)"]:::component
+        playPanel["PlaybackPanel<br/>(scrubber, 3D viewport)"]:::component
+        analytics["AnalyticsPanel<br/>(bitrate, PSNR, SSIM live)"]:::component
+        viewer3d["Volumetric Viewer<br/>(WebGPU + WASM decoder)"]:::component
+        settings["EncoderSettings<br/>(bit depth, mode, motion)"]:::component
+        store["Zustand State Store"]:::component
+        api_client["API Client<br/>(REST + WebSocket)"]:::component
+    end
+
+    subgraph be["Control-plane API (Node + Fastify)"]
+        routes["REST routes<br/>(/profiles, /sessions, /streams)"]:::component
+        wsgw["WebSocket Gateway<br/>(live metrics, frame stats)"]:::component
+        agentctl["AgentController<br/>(spawn / kill / IPC)"]:::component
+        authmw["AuthMiddleware<br/>(API keys + JWT)"]:::component
+        rateLim["RateLimiter<br/>(per-key throttle)"]:::component
+    end
+
+    subgraph ag["Capture Agent (Rust)"]
+        sensorif["SensorInterface<br/>(UVC, librealsense, K4A)"]:::component
+        framepump["FramePump<br/>(zero-copy ring buffer)"]:::component
+        sccbridge["SCC Bridge<br/>(FFI to libscc)"]:::component
+        muxer["Muxer<br/>(libavformat / mp4)"]:::component
+        hbeat["Heartbeat / IPC<br/>(Unix sockets / named pipes)"]:::component
+    end
+
+    shell --> capPanel
+    shell --> playPanel
+    shell --> analytics
+    shell --> settings
+    capPanel --> store
+    playPanel --> viewer3d
+    settings --> store
+    store --> api_client
+    api_client --> routes
+    api_client --> wsgw
+    routes --> agentctl
+    routes --> authmw
+    routes --> rateLim
+    wsgw --> agentctl
+    agentctl --> hbeat
+    hbeat --> sensorif
+    sensorif --> framepump
+    framepump --> sccbridge
+    sccbridge --> muxer
+    muxer --> wsgw
+
+    classDef component fill:#1168BD,color:#fff,stroke:#0B4884

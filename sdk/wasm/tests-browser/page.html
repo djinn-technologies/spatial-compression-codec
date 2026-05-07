@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>SCC WASM browser test</title>
+</head>
+<body>
+    <h1>SCC WASM browser test</h1>
+    <pre id="status">loading...</pre>
+    <script type="module">
+        import {
+            SCCEncoder,
+            SCCDecoder,
+        } from '../dist/index.js';
+
+        function makeFrame(W, H, seed) {
+            const out = new Uint16Array(W * H);
+            let s = seed >>> 0;
+            for (let i = 0; i < out.length; ++i) {
+                s = (s * 1664525 + 1013904223) >>> 0;
+                out[i] = s & 0x3FF;
+            }
+            return out;
+        }
+
+        async function arraysEqual(a, b) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; ++i) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
+
+        // Expose entry point for Playwright.
+        globalThis.__sccTest = async function ({ width, height, seed }) {
+            const enc = await SCCEncoder.create({ width, height, bitDepth: 12 });
+            const dec = await SCCDecoder.create();
+            try {
+                const depth = makeFrame(width, height, seed);
+                const sei = await enc.encode(depth);
+                const out = await dec.decode(sei);
+                return {
+                    ok: out.width === width
+                      && out.height === height
+                      && out.bitDepth === 12
+                      && (await arraysEqual(out.depth, depth)),
+                    seiBytes: sei.byteLength,
+                    width: out.width,
+                    height: out.height,
+                };
+            } finally {
+                enc.close();
+                dec.close();
+            }
+        };
+
+        document.getElementById('status').textContent = 'ready';
+    </script>
+</body>
+</html>

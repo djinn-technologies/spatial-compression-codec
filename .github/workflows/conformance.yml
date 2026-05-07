@@ -1,0 +1,94 @@
+# SCC conformance — executable acceptance suite.
+#
+# Wires acceptance/Acceptance_Criteria.md into CI. Every blocking REQ
+# failure blocks merge; non-blocking failures and TIMEOUTs surface as
+# warnings in the PR. The HTML/JSON reports are uploaded as artefacts;
+# SAD §14 links to the latest artefact via the workflow run id.
+#
+# Stdlib-only Python; no third-party action dependencies beyond the
+# official actions/checkout and actions/upload-artifact.
+
+name: SCC conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # bisect needs the merge-base history
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install codec build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build \
+            libpng-dev libtiff-dev libopenjp2-7-dev zlib1g-dev
+
+      - name: Self-test the runner
+        run: python -m unittest ci.conformance.tests.test_runner -v
+
+      - name: Configure + build
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSCC_ENABLE_TESTS=ON \
+            -DSCC_ENABLE_BENCH=ON \
+            -DSCC_ENABLE_BENCH_HARNESS=ON
+          cmake --build build -j
+
+      - name: Run conformance suite
+        id: run
+        # `--coverage-warn` because the YAML coverage backfill is in
+        # progress; switch to `--coverage-strict` once every REQ has
+        # a case file (tracked in ADR-015).
+        run: |
+          python ci/conformance/run.py \
+            --out reports/conformance \
+            --gh-annotations \
+            --coverage-warn \
+            --max-workers 4 \
+            --global-budget-seconds 1200
+
+      - name: Bisect mode (informational)
+        if: github.event_name == 'pull_request'
+        # Smaller, targeted re-run keyed on changed evidence_paths --
+        # informational only; the gate is the full run above.
+        continue-on-error: true
+        run: |
+          python ci/conformance/run.py \
+            --out reports/conformance-bisect \
+            --bisect \
+            --since "origin/${{ github.base_ref }}" \
+            --max-workers 4
+
+      - name: Append summary
+        if: always()
+        run: |
+          if [ -f reports/conformance/summary.txt ]; then
+            cat reports/conformance/summary.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-report
+          path: |
+            reports/conformance/conformance.html
+            reports/conformance/conformance.json
+            reports/conformance/summary.txt
+            reports/conformance-bisect/conformance.html
+          retention-days: 30

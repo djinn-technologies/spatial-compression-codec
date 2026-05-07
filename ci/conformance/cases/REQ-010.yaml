@@ -1,0 +1,15 @@
+# REQ-010 — rANS-16 entropy coder for the R list.
+
+id: REQ-010
+description: R list compressed using 16-bit-state rANS; decode round-trip succeeds.
+sad_section: "§B. Entropy coder — rANS"
+evidence: "[Brief]; [Patent col. 7-8]; [Duda 2014 §3.3]"
+evidence_paths:
+  - codec/include/scc/rans.hpp
+  - codec/src/common/rans.cpp
+  - codec/tests/test_rans.cpp
+test_command: "ctest --test-dir build -R 'rans16_' --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 60
+blocking: true

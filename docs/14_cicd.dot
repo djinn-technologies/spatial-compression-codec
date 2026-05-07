@@ -1,0 +1,28 @@
+digraph CICD {
+  rankdir=LR;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.3, ranksep=0.4];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.13];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  push    [label="Git push / PR"];
+  lint    [label="Lint & format\n(clang-format,\neslint, ruff)"];
+  static  [label="Static analysis\n(clang-tidy,\ncppcheck, audit)"];
+  unit    [label="Unit tests\n(Catch2,\nVitest, pytest)"];
+  bench   [label="Codec benchmarks\n(vs JPEG2000/PNG/\nTIFF/zlib)"];
+  integ   [label="Integration tests\n(H.264 round-trip,\nSEI parse)"];
+  wasm    [label="Build WASM\n(emscripten)"];
+  nat     [label="Build natives\n(Linux x64/ARM64,\nWin, macOS,\nAndroid, iOS)"];
+  sec     [label="Security scan\n(Trivy, CodeQL,\nSemgrep)"];
+  sign    [label="Code-sign\n(Apple notar.,\nAuthenticode,\nnpm provenance)"];
+  staging [label="Deploy: staging\n(ECS Fargate)"];
+  approve [label="Manual approval", shape=diamond, fillcolor="#F39C12"];
+  prod    [label="Deploy: prod\n(ECS + CloudFront)"];
+  pub     [label="Publish SDKs\n(npm, PyPI,\nConan, vcpkg)"];
+
+  push->lint->static->unit->bench->integ;
+  integ->wasm; integ->nat;
+  wasm->sec; nat->sec;
+  sec->sign->staging->approve;
+  approve->prod [label="yes"];
+  prod->pub;
+}

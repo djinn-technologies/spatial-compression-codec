@@ -1,0 +1,15 @@
+# REQ-022 — Quad-tree movement-region partitioning.
+
+id: REQ-022
+description: RegionMap from build_region_map is a proper quad-tree (every pixel covered exactly once).
+sad_section: "§C. Movement detection & dynamic interlacing"
+evidence: "[Brief]; [Patent col. 9-10]"
+evidence_paths:
+  - codec/include/scc/quadtree.hpp
+  - codec/src/common/quadtree.cpp
+  - codec/tests/test_quadtree.cpp
+test_command: "ctest --test-dir build -R 'quadtree_partition' --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 60
+blocking: true

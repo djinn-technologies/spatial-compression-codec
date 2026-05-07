@@ -1,0 +1,18 @@
+PLACEHOLDER for Icon128.png
+
+This file is a stand-in. The Epic Fab marketplace + Unreal Editor's
+Plugin Browser require a real 128x128 PNG at this path:
+
+    sdk/unreal/SCC/Resources/Icon128.png
+
+The image is a binary asset and is intentionally NOT committed in
+source form. Provide the PNG via:
+
+    1. Place a 128x128 RGBA PNG at the path above (replacing this
+       placeholder).
+    2. The release script (prepare-distribution.sh) verifies the file
+       exists and is the correct dimensions before zipping the plugin
+       for marketplace submission.
+
+Recommended branding: a simple monochrome glyph -- the marketplace
+preview is shown at 64x64 in tile views.
