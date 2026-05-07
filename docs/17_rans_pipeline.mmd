@@ -1,0 +1,25 @@
+flowchart TB
+    s["Disparity Matrix S<br/>(flattened, raster scan)"]:::input
+    hist["Frequency Histogram<br/>over S values"]:::process
+    pick["Select TOP-x most frequent<br/>(typically x = 4 → ≈85–98 percent coverage)"]:::process
+    split["Split S into:<br/>• TOP[i] — index into top-list<br/>• R[k] — remainder values<br/>• B[i,j] — boolean (which list)"]:::process
+    rans8a["rANS-8 encoder<br/>(TOP indices, alphabet ≤ 256)"]:::process
+    rans8b["rANS-8 encoder<br/>(B matrix, binary alphabet)"]:::process
+    rans16["rANS-16 encoder<br/>(R values, full int16)"]:::process
+    pack["Pack frame:<br/>[hdr][TOP-tab][rANS-TOP][rANS-B][rANS-R]"]:::process
+    out["Compressed payload<br/>→ SEI muxer"]:::output
+
+    s --> hist
+    hist --> pick
+    pick --> split
+    split --> rans8a
+    split --> rans8b
+    split --> rans16
+    rans8a --> pack
+    rans8b --> pack
+    rans16 --> pack
+    pack --> out
+
+    classDef input fill:#27AE60,color:#fff
+    classDef output fill:#C0392B,color:#fff
+    classDef process fill:#1168BD,color:#fff

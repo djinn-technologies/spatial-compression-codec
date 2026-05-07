@@ -1,0 +1,44 @@
+/* Overlays for the WebGPU <canvas>. CSS-modules so the
+ * canvas-specific layout doesn't leak into Tailwind utility-first land. */
+
+.viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    overflow: hidden;
+    background: #050a14;
+    border-radius: 8px;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+}
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f1f5f9;
+    text-align: center;
+    padding: 1rem;
+}
+
+.fallback {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+.controls {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+    pointer-events: auto;
+}

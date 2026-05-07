@@ -1,0 +1,84 @@
+[package]
+name = "scc-studio-agent"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0"
+description = "Native daemon owning the depth-sensor connection for the SCC Studio. Wraps libscc over FFI; talks protobuf-on-Unix-socket / named-pipe to the Studio frontend."
+authors = ["Djinn"]
+keywords = ["depth", "compression", "codec", "h264", "sei", "rans", "studio"]
+categories = ["multimedia", "command-line-utilities"]
+
+# Single binary; not part of any cargo workspace (the parent repo is a
+# C++ CMake project plus this standalone Rust crate).
+
+[[bin]]
+name = "scc-studio-agent"
+path = "src/main.rs"
+
+[lib]
+name = "scc_studio_agent"
+path = "src/lib.rs"
+
+[dependencies]
+tokio              = { version = "1.40", features = ["rt-multi-thread", "net", "io-util", "macros", "signal", "sync", "time"] }
+clap               = { version = "4.5", features = ["derive", "env"] }
+serde              = { version = "1", features = ["derive"] }
+prost              = "0.13"
+crossbeam          = "0.8"
+crossbeam-channel  = "0.5"
+async-trait        = "0.1"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+tracing-opentelemetry = "0.25"
+opentelemetry      = "0.24"
+opentelemetry-otlp = { version = "0.17", features = ["tonic"] }
+opentelemetry_sdk  = { version = "0.24", features = ["rt-tokio"] }
+thiserror          = "1"
+anyhow             = "1"
+bytes              = "1"
+hdrhistogram       = "7"      # encode-latency p50/p99 in metrics
+once_cell          = "1"
+uuid               = { version = "1", features = ["v4"] }
+
+[build-dependencies]
+bindgen     = "0.69"
+prost-build = "0.13"
+
+[features]
+# Built-in features. The mock sensor is always compiled (used by tests
+# and as a fallback for hosts without sensor SDKs). Real backends are
+# strictly opt-in. [Ultrathink #2]
+default = []
+
+# Feature-gates each sensor backend module. The actual vendor SDK
+# crates (librealsense2-sys, k4a-sys, etc.) are intentionally NOT
+# wired here -- they bring vendor SDK build dependencies that no CI
+# matrix wants by default. Each module compiles as a stub that
+# returns Unavailable; production builds add the real SDK crate as a
+# dep behind the same feature.
+realsense = []
+k4a       = []
+zed       = []
+uvc       = []
+
+[dev-dependencies]
+tokio    = { version = "1.40", features = ["test-util", "rt-multi-thread", "net", "io-util", "macros", "time"] }
+tempfile = "3"
+proptest = "1"
+criterion = "0.5"
+
+[[bench]]
+name    = "ring_buffer"
+harness = false
+
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+strip         = "symbols"
+panic         = "abort"
+
+[profile.bench]
+inherits = "release"
+debug    = true

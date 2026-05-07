@@ -1,0 +1,16 @@
+flowchart LR
+    push["Git push / PR"] --> lint["Lint &amp; format<br/>(clang-format, eslint, ruff)"]
+    lint --> staticAn["Static analysis<br/>(clang-tidy, cppcheck, audit)"]
+    staticAn --> unit["Unit tests<br/>(Catch2, Vitest, pytest)"]
+    unit --> bench["Codec benchmarks<br/>(vs JPEG2000/PNG/TIFF/zlib)"]
+    bench --> integ["Integration tests<br/>(H.264 round-trip, SEI parse)"]
+    integ --> wasm["Build WASM<br/>(emscripten)"]
+    integ --> nat["Build natives<br/>(Linux x86_64, ARM64,<br/>Windows, macOS, Android, iOS)"]
+    wasm --> sec["Security scan<br/>(Trivy, CodeQL, Semgrep)"]
+    nat --> sec
+    sec --> sign["Code-sign artefacts<br/>(Apple notarisation, Authenticode,<br/>npm provenance)"]
+    sign --> staging["Deploy: staging<br/>(ECS Fargate)"]
+    staging --> approve{"Manual approval"}
+    approve -->|yes| prod["Deploy: production<br/>(ECS Fargate + CloudFront)"]
+    approve -->|no| stop["No release"]
+    prod --> publish["Publish SDKs<br/>(npm, PyPI, Conan, vcpkg)"]

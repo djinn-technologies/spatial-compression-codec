@@ -1,0 +1,38 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.4, ranksep=0.55];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  sei [label="H.264 SEI NAL Unit\n(user_data_unregistered)", fillcolor="#27AE60"];
+  out [label="Reconstructed Depth Frame", fillcolor="#C0392B"];
+
+  subgraph cluster_dec {
+    label="scc_decoder"; style="rounded,dashed"; color="#0B4884"; fontsize=11;
+    seidemux [label="SEIPayloadDemuxer\n(uuid match, header parse)"];
+    headerp  [label="FrameHeaderParser\n(W, H, bit depth, mode flags)"];
+    rans8d   [label="rANS-8 Decoder\n(TOP + B)"];
+    rans16d  [label="rANS-16 Decoder\n(R)"];
+    topbm    [label="ListMerger\n(B-mask drives selection)"];
+    dispr    [label="DisparityReconstructor\n(row-prefix sum, inverse S)"];
+    quadr    [label="QuadTreeRegionReader\n(rebuild region map)"];
+    interp   [label="PixelInterpolator\n(reconstruct skipped pixels)"];
+    cache    [label="FrameCache\n(prev frame for delta)"];
+    outfmt   [label="DepthOutputFormatter\n(R32F / R16U / R8U)"];
+  }
+
+  sei -> seidemux;
+  seidemux -> headerp;
+  seidemux -> rans8d;
+  seidemux -> rans16d;
+  seidemux -> quadr;
+  rans8d -> topbm;
+  rans16d -> topbm;
+  topbm -> dispr;
+  quadr -> interp;
+  dispr -> interp;
+  cache -> interp;
+  interp -> outfmt;
+  outfmt -> out;
+  outfmt -> cache;
+}

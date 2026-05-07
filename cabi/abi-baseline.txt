@@ -1,0 +1,10 @@
+scc_decode_sei
+scc_destroy
+scc_encode_frame
+scc_get_last_error
+scc_get_param
+scc_init
+scc_load_profile
+scc_save_profile
+scc_set_param
+scc_version

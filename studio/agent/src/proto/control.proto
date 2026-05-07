@@ -1,0 +1,114 @@
+// studio/agent/src/proto/control.proto
+//
+// IPC contract for the SCC Studio capture agent.
+//
+// Wire framing: each message on the Unix domain socket / Windows named
+// pipe is preceded by a big-endian uint32 length. The reader consumes
+// the length, then exactly that many bytes of protobuf, then the next
+// length, and so on.
+//
+// Forward compatibility: proto3, oneof for variant message kinds, tag
+// numbers are added in strict ascending order. Old clients ignore
+// unknown fields. New variants in the oneofs are visible to new
+// clients only. [Ultrathink #4]
+
+syntax = "proto3";
+
+package scc.studio.agent.v1;
+
+// ---------------------------------------------------------------------------
+// Top-level envelopes.
+// ---------------------------------------------------------------------------
+
+message AgentRequest {
+    oneof kind {
+        ListSensors  list    = 1;
+        StartSession start   = 2;
+        StopSession  stop    = 3;
+        GetMetrics   metrics = 4;
+        // Tag numbers 5..15 reserved for v1 minor extensions.
+    }
+}
+
+message AgentResponse {
+    oneof kind {
+        SensorList  sensors = 1;
+        SessionInfo session = 2;
+        Metrics     metrics = 3;
+        Error       err     = 4;
+        Ack         ack     = 5;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Requests.
+// ---------------------------------------------------------------------------
+
+message ListSensors {}
+
+message StartSession {
+    string sensor_id    = 1;   // returned by ListSensors -> SensorDescriptor.id
+    uint32 width        = 2;
+    uint32 height       = 3;
+    uint32 bit_depth    = 4;   // 8 / 12 / 16
+    string profile      = 5;   // "lossless" | "lossy:high" | "lossy:streaming"
+    string output_path  = 6;   // optional file path; empty = no file mux
+    uint32 fps          = 7;   // requested sensor frame rate
+}
+
+message StopSession {
+    string session_id = 1;
+}
+
+message GetMetrics {
+    string session_id = 1;     // optional; empty = aggregate over agent
+}
+
+// ---------------------------------------------------------------------------
+// Responses.
+// ---------------------------------------------------------------------------
+
+message SensorList {
+    repeated SensorDescriptor sensors = 1;
+}
+
+message SensorDescriptor {
+    string id        = 1;
+    string vendor    = 2;
+    string model     = 3;
+    string backend   = 4;      // "realsense" | "k4a" | "zed" | "uvc" | "mock"
+    repeated FrameMode modes = 5;
+}
+
+message FrameMode {
+    uint32 width     = 1;
+    uint32 height    = 2;
+    uint32 fps       = 3;
+    uint32 bit_depth = 4;
+}
+
+message SessionInfo {
+    string session_id      = 1;
+    uint64 frames_captured = 2;
+    uint64 bytes_emitted   = 3;
+    bool   active          = 4;
+}
+
+message Metrics {
+    double frames_per_second = 1;
+    uint64 dropped_frames    = 2;
+    double encode_p50_ms     = 3;
+    double encode_p99_ms     = 4;
+    uint64 ring_buffer_fill  = 5;
+    uint64 frames_total      = 6;
+    uint64 bytes_total       = 7;
+}
+
+message Ack {
+    string message = 1;
+}
+
+message Error {
+    uint32 code    = 1;
+    string message = 2;
+}

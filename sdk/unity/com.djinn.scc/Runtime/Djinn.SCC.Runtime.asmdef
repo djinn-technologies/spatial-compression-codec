@@ -1,0 +1,17 @@
+{
+    "name": "Djinn.SCC.Runtime",
+    "rootNamespace": "Djinn.SCC",
+    "references": [
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

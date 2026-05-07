@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "scc_version": "scc-bench/1.0",
+    "host": "ci-baseline",
+    "compiler": "frozen",
+    "build_type": "Release",
+    "seed": "0xC0FFEE",
+    "runs": 5,
+    "pinned": true
+  },
+  "rows": [
+    {"codec":"scc","profile":"lossless","width":320,"height":240,"bit_depth":12,"sequence":"moving_plane","frame_count":30,"encode_fps_st":300.0,"decode_fps_st":350.0,"encode_fps_mt":900.0,"decode_fps_mt":1100.0,"compression_ratio":0.30,"psnr_db_mean":80.0,"ssim_mean":0.999,"point_cloud_diff_pct":0.0,"error":""},
+    {"codec":"scc","profile":"lossless","width":320,"height":240,"bit_depth":12,"sequence":"static_room","frame_count":30,"encode_fps_st":280.0,"decode_fps_st":340.0,"encode_fps_mt":850.0,"decode_fps_mt":1050.0,"compression_ratio":0.40,"psnr_db_mean":80.0,"ssim_mean":0.999,"point_cloud_diff_pct":0.0,"error":""},
+    {"codec":"scc","profile":"lossless","width":320,"height":240,"bit_depth":12,"sequence":"textured_sphere","frame_count":30,"encode_fps_st":290.0,"decode_fps_st":345.0,"encode_fps_mt":870.0,"decode_fps_mt":1080.0,"compression_ratio":0.45,"psnr_db_mean":80.0,"ssim_mean":0.999,"point_cloud_diff_pct":0.0,"error":""}
+  ]
+}

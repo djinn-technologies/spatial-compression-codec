@@ -1,0 +1,17 @@
+digraph H264SEI {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.3, ranksep=0.4];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.14];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  a [label="① Reference App calls scc_encoder.encode_frame(rgb, depth)"];
+  b [label="② SEI Payload Builder packs:\n[16-byte UUID][version_major][version_minor][len][payload]"];
+  c [label="③ Payload type 5 = user_data_unregistered\n(ISO/IEC 14496-10 §D.1.6)"];
+  d [label="④ Builder returns NAL-escaped byte buffer"];
+  e [label="⑤ App passes RGB packet to libavcodec encoder"];
+  f [label="⑥ App injects SEI via AVPacket side-data\n(AV_PKT_DATA_NEW_EXTRADATA / x264_nal_t inject hook)"];
+  g [label="⑦ libavformat emits NAL-unit order:\n[SPS][PPS][SEI:scc][IDR-slice]…[SEI:scc][P-slice]…"];
+  h [label="⑧ Container (.mp4 / RTP) writes muxed frame —\nSCC payload now travels in-band, no out-of-band channel"];
+
+  a->b->c->d->e->f->g->h;
+}

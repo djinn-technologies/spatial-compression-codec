@@ -1,0 +1,37 @@
+digraph Threat {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.4, ranksep=0.6, compound=true];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.14];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  user   [label="Operator / Viewer", fillcolor="#08427B"];
+  sensor [label="RGB-D Sensor (USB)", fillcolor="#999999"];
+
+  subgraph cluster_t1 {
+    label="Trust Boundary: Public Internet (untrusted)"; style="rounded,dashed"; color="#C0392B"; fontcolor="#C0392B";
+    cdn [label="CDN\n(FE assets, WASM)"];
+    sfu [label="WebRTC SFU"];
+  }
+  subgraph cluster_t2 {
+    label="Trust Boundary: Application Tier (semi-trusted)"; style="rounded,dashed"; color="#F39C12"; fontcolor="#F39C12";
+    api   [label="Control-plane API"];
+    agent [label="Capture Agent (on-host)"];
+  }
+  subgraph cluster_t3 {
+    label="Trust Boundary: Data Tier (trusted)"; style="rounded,dashed"; color="#27AE60"; fontcolor="#27AE60";
+    rds [label="PostgreSQL", shape=cylinder];
+    s3  [label="S3 (KMS-encrypted)", shape=cylinder];
+    kms [label="AWS KMS"];
+  }
+
+  user -> cdn   [label="HTTPS / TLS 1.3"];
+  user -> api   [label="HTTPS / WSS"];
+  cdn  -> user  [label="signed FE bundle"];
+  sensor -> agent [label="USB / UVC"];
+  agent -> sfu  [label="QUIC + DTLS-SRTP"];
+  sfu  -> user  [label="QUIC"];
+  api  -> agent [label="TLS + JWT"];
+  api  -> rds   [label="TLS"];
+  api  -> s3    [label="TLS + SigV4"];
+  s3   -> kms   [label="KMS unwrap"];
+}

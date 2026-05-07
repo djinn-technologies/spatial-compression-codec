@@ -1,0 +1,11 @@
+# npm / build outputs
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Vitest / Playwright
+.vitest/
+.playwright/
+playwright-report/
+test-results/
+blob-report/

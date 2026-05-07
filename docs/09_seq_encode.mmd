@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+    participant Sensor as RGB-D Sensor
+    participant Agent as Capture Agent
+    participant Enc as scc_encoder
+    participant Disp as DisparityBuilder
+    participant Mov as MovementDetector
+    participant Quad as QuadTreeMap
+    participant rANS as rANS Engines
+    participant Mux as SEI Muxer
+    participant H264 as H.264 Encoder
+    participant Net as SFU / File Sink
+
+    Sensor->>Agent: RGB frame + Depth frame (W×H, 16bpp)
+    Agent->>Enc: encode_frame(rgb, depth, profile)
+    Enc->>Enc: filter (median / hole-fill)
+    Enc->>Enc: bit-depth adapt → 12 bpp
+    Enc->>Disp: build S = row-prefix differences
+    Disp-->>Enc: disparity matrix S
+    Enc->>Mov: diff vs previous frame
+    Mov->>Quad: build quad-tree of motion regions
+    Quad-->>Enc: region map + per-region pattern
+    Enc->>Enc: split S → TOP / R / B
+    Enc->>rANS: encode TOP (8-bit)
+    Enc->>rANS: encode B (8-bit)
+    Enc->>rANS: encode R (16-bit)
+    rANS-->>Enc: packed payloads
+    Enc->>Mux: pack header + payloads
+    Mux-->>H264: SEI user_data_unregistered (UUID + payload)
+    Agent->>H264: RGB frame
+    H264->>H264: encode RGB to NAL units
+    H264->>Net: NAL stream (RGB + SEI interleaved)

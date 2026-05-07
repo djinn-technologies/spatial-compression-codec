@@ -1,0 +1,15 @@
+digraph Disp {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.35, ranksep=0.5];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  in     [label="Depth Frame d[i,j]\n(W × H, bit-depth N)", fillcolor="#27AE60"];
+  init   [label="Allocate S matrix\n(W × H, signed)"];
+  anchor [label="s[1,1] = d[1,1]\n(absolute anchor)"];
+  row1   [label="For j = 2..W:\n  s[1,j] = d[1,j] − d[1,j-1]\n(top-row horizontal)"];
+  rest   [label="For i = 2..H, j = 1..W:\n  s[i,j] = d[i,j] − d[i-1,j]\n(column-wise vertical)"];
+  out    [label="Disparity Matrix S\nnear-zero values dominate\nwhere consecutive rows are similar", fillcolor="#C0392B"];
+
+  in->init->anchor->row1->rest->out;
+}

@@ -1,0 +1,16 @@
+# REQ-030 — Studio frontend conformance.
+
+id: REQ-030
+description: Studio frontend typecheck + Vitest unit suite pass.
+sad_section: "§K. Studio frontend"
+evidence: "[Brief]; ADR-013"
+evidence_paths:
+  - studio/frontend/src
+  - studio/frontend/tests
+  - studio/frontend/package.json
+test_command: "npm --prefix studio/frontend run typecheck && npm --prefix studio/frontend run test"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 480
+blocking: true
+skip_reason: "requires Node 20+ with workspace deps installed"

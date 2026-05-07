@@ -1,0 +1,117 @@
+# sdk/python/pyproject.toml
+#
+# scc-py — Python binding for the Spatial Compression Codec.
+# [REQ-028, ADR-008]
+#
+# Build via scikit-build-core: `pip install .` from this directory drives
+# CMake, which compiles the C++ codec + the pybind11 extension into a
+# single self-contained _core.so/.pyd shipped inside the wheel.
+
+[build-system]
+requires = [
+    "scikit-build-core>=0.9",
+    "pybind11>=2.12",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "scc-py"
+version = "1.0.0"
+description = "Python binding for the Spatial Compression Codec (SCC) — encode and decode H.264-compatible depth-frame SEI payloads with NumPy zero-copy interop."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Djinn" }]
+keywords = ["depth", "compression", "codec", "h264", "sei", "rans", "numpy"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Typing :: Typed",
+]
+dependencies = [
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://example.com/scc-py"
+Source = "https://example.com/spatial-compression-codec"
+Issues = "https://example.com/spatial-compression-codec/issues"
+
+# ---------------------------------------------------------------------------
+# scikit-build-core configuration
+# ---------------------------------------------------------------------------
+
+[tool.scikit-build]
+minimum-version = "0.9"
+build-dir = "build/{wheel_tag}"
+cmake.version = ">=3.27"
+ninja.version = ">=1.10"
+wheel.packages = ["src/scc_py"]
+sdist.include = [
+    "src/scc_py/*.py",
+    "src/scc_py/*.pyi",
+    "src/scc_py/py.typed",
+    "src/scc_py/_core.cpp",
+    "CMakeLists.txt",
+    "README.md",
+    "tests/*.py",
+]
+
+# CMake variables passed to sdk/python/CMakeLists.txt.
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "Release"
+
+# ---------------------------------------------------------------------------
+# cibuildwheel matrix (CI builds; not run here).
+# Acceptance: cp310/cp311/cp312/cp313 × {linux x86_64, linux aarch64,
+#             macos universal2, windows amd64}.  [Ultrathink #2]
+# ---------------------------------------------------------------------------
+
+[tool.cibuildwheel]
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]
+# Skip musllinux: glibc-only first-party support; users on Alpine can
+# build from source.
+skip = ["*-musllinux_*", "pp*"]
+build-verbosity = 1
+test-command = "pytest {project}/sdk/python/tests"
+test-requires = ["pytest", "numpy"]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+
+[tool.cibuildwheel.macos]
+archs = ["universal2"]
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
+# ---------------------------------------------------------------------------
+# Type checking
+# ---------------------------------------------------------------------------
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src/scc_py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-q", "--strict-markers"]

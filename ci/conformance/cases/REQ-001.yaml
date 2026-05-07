@@ -1,0 +1,18 @@
+# REQ-001 — Row-based depth similarity round-trip
+#
+# Pinned to the disparity unit suite from prompt #2 (`test_disparity`),
+# specifically the `roundtrip_random` Catch2 case.
+
+id: REQ-001
+description: Lossless encode-decode of any depth frame reproduces the input bit-exact.
+sad_section: "§A. Codec algorithm — row-based depth similarity"
+evidence: "[Brief]; [Patent col. 4-5]"
+evidence_paths:
+  - codec/include/scc/disparity.hpp
+  - codec/src/common/disparity.cpp
+  - codec/tests/test_disparity.cpp
+test_command: "ctest --test-dir build -R '^test_disparity$' --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 90
+blocking: true

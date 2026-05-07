@@ -1,0 +1,18 @@
+sequenceDiagram
+    autonumber
+    participant App as Reference App
+    participant SCC as scc_encoder
+    participant SEIBuilder as SEI Payload Builder
+    participant FF as libavformat / libavcodec
+    participant File as .mp4 / RTP Stream
+
+    App->>SCC: encode_frame(rgb, depth)
+    SCC->>SEIBuilder: pack(uuid + version + payload)
+    Note right of SEIBuilder: Payload type 5 =<br/>user_data_unregistered<br/>(ISO/IEC 14496-10 §D.1.6)
+    SEIBuilder-->>SCC: byte buffer (NAL-escaped)
+    SCC-->>App: SEI bytes + RGB
+    App->>FF: send RGB packet (encode)
+    App->>FF: side_data(AV_PKT_DATA_NEW_EXTRADATA / SEI inject)
+    FF->>FF: emit NAL units in order:<br/>[SPS] [PPS] [SEI:scc] [IDR-slice]
+    FF->>File: write mux-frame
+    Note over File: SCC payload now travels<br/>inside the H.264 elementary<br/>stream — no out-of-band channel.

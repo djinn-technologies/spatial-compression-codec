@@ -1,0 +1,19 @@
+# REQ-024 — Bench harness regression gate.
+#
+# scc-bench runs against the committed baseline; non-zero exit on
+# regression. The case is non-blocking because perf can wobble on
+# a noisy runner; the gate's own thresholds are tuned for stability.
+
+id: REQ-024
+description: scc-bench compares against bench/reports/baseline.json without regression.
+sad_section: "§G. Quality, throughput, and benchmarks"
+evidence: "[Brief]; ADR-014"
+evidence_paths:
+  - bench/src
+  - bench/CMakeLists.txt
+  - bench/reports/baseline.json
+test_command: "ctest --test-dir build -R bench_regression_gate --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 360
+blocking: false

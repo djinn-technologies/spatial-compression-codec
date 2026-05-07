@@ -1,0 +1,27 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor="white", fontname="Helvetica", fontsize=11, splines=true, nodesep=0.5, ranksep=0.7];
+  node  [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", margin=0.18];
+  edge  [fontname="Helvetica", fontsize=9];
+
+  capture [label="Capture Operator\n(camera rig / sensor host)", fillcolor="#08427B", fontcolor="white"];
+  viewer  [label="Playback Viewer", fillcolor="#08427B", fontcolor="white"];
+  devops  [label="DevOps / Integrator", fillcolor="#08427B", fontcolor="white"];
+  scc     [label="Spatial Compression Codec (SCC)\nDepth-aware codec, SDK and reference app\nfor RGB-D 3D-video streaming and recording", fillcolor="#1168BD", fontcolor="white", penwidth=2];
+
+  sensor    [label="RGB-D Sensor\n(Kinect / RealSense / ZED / ToF)", fillcolor="#999999", fontcolor="white"];
+  h264      [label="H.264 / AVC Codec\n(libx264, NVENC, QSV)", fillcolor="#999999", fontcolor="white"];
+  streaming [label="Streaming Servers\n(WebRTC SFU, RTMP, HLS)", fillcolor="#999999", fontcolor="white"];
+  storage   [label="Object Storage\n(S3, R2, Azure Blob)", fillcolor="#999999", fontcolor="white"];
+  djinn     [label="Djinn Volumetric\nVisualisation Stack", fillcolor="#999999", fontcolor="white"];
+
+  capture -> scc [label="RGB-D frames"];
+  sensor  -> scc [label="RGB + raw depth"];
+  scc -> streaming [label="H.264 + depth SEI"];
+  scc -> storage   [label=".mp4 + depth SEI"];
+  streaming -> scc [label="H.264 + SEI"];
+  storage   -> scc [label="H.264 + SEI"];
+  scc -> djinn     [label="RGB + reconstructed depth"];
+  djinn -> viewer  [label="rendered 3D scene"];
+  devops -> scc    [label="API config, encoding params"];
+}

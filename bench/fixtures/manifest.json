@@ -1,0 +1,45 @@
+{
+  "$schema": "https://spec.djinn.io/scc-bench/manifest.schema.json",
+  "version": 1,
+  "comment": [
+    "Corpus manifest for scc-bench. The synthetic sequences listed",
+    "below are GENERATED at run-time from the seed; they are not",
+    "checked into git -- their bytes are reproducible from the seed.",
+    "External corpora (NYUv2 subset, BigBIRD subset) are referenced",
+    "with download URLs and SHA-256 sums; they are downloaded on",
+    "first use and never committed. CI runs against the synthetic",
+    "set only -- zero network during bench in PR runs."
+  ],
+  "synthetic": [
+    {
+      "name": "moving_plane",
+      "frames": 30,
+      "seed_xor": "0x0",
+      "description": "Tilted plane translating across the FOV; tests temporal coding."
+    },
+    {
+      "name": "static_room",
+      "frames": 30,
+      "seed_xor": "0xA5A5A5A5",
+      "description": "Static room geometry plus per-pixel sensor noise; tests spatial + noise robustness."
+    },
+    {
+      "name": "textured_sphere",
+      "frames": 30,
+      "seed_xor": "0x5A5A5A5A",
+      "description": "Sphere with high-frequency texture noise; tests non-planar smooth-surface coding."
+    }
+  ],
+  "external": [
+    {
+      "name": "nyuv2_kitchen_subset",
+      "url": "https://example.djinn.io/datasets/nyuv2_kitchen_subset_v1.tar.zst",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "license": "CC-BY-4.0",
+      "frames": 60,
+      "resolution": "640x480",
+      "bit_depth": 12,
+      "comment": "Placeholder URL/checksum. Update before running externally."
+    }
+  ]
+}

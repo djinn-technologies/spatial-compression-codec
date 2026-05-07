@@ -1,0 +1,16 @@
+# REQ-029 — Studio control-plane API conformance.
+
+id: REQ-029
+description: Studio API integration tests pass (RLS isolation, RS256 auth, OpenAPI roundtrip).
+sad_section: "§J. Control-plane API"
+evidence: "[Brief]; ADR-012"
+evidence_paths:
+  - studio/api/src
+  - studio/api/tests
+  - studio/api/package.json
+test_command: "npm --prefix studio/api run test"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 600
+blocking: true
+skip_reason: "requires Postgres testcontainer; gated to runners with Docker"

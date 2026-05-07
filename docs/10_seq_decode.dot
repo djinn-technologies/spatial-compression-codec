@@ -1,0 +1,24 @@
+digraph DecodeSeq {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.3, ranksep=0.35];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.14];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  d00 [label="① SFU / file source delivers H.264 NAL stream"];
+  d01 [label="② H.264 decoder: produces RGB frame"];
+  d02 [label="③ SEI demuxer: filter NAL units, match SCC UUID"];
+  d03 [label="④ scc_decoder parses header (W,H,bit-depth,mode flags)"];
+  d04 [label="⑤ rANS-8 decode (TOP indices)"];
+  d05 [label="⑥ rANS-8 decode (B mask)"];
+  d06 [label="⑦ rANS-16 decode (R remainders)"];
+  d07 [label="⑧ ListMerger: drive TOP/R selection by B-mask"];
+  d08 [label="⑨ DisparityReconstructor: row-prefix sum (inverse S)"];
+  d09 [label="⑩ FrameCache: fetch previous depth frame"];
+  d10 [label="⑪ PixelInterpolator: fill skipped pixels via interlace pattern"];
+  d11 [label="⑫ DepthOutputFormatter: emit R32F / R16U / R8U"];
+  d12 [label="⑬ FrameCache stores new depth frame"];
+  d13 [label="⑭ 3D Renderer composites RGB + depth → point cloud / mesh"];
+
+  d00->d01->d02->d03->d04;
+  d04->d05->d06->d07->d08->d09->d10->d11->d12->d13;
+}

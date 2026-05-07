@@ -1,0 +1,24 @@
+digraph EncodeSeq {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.3, ranksep=0.35];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.14];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  s00 [label="① Sensor delivers RGB + Depth (W×H, 16bpp)\nto Capture Agent"];
+  s01 [label="② Agent invokes encode_frame(rgb, depth, profile)\non scc_encoder"];
+  s02 [label="③ DepthFilter: median + hole-fill"];
+  s03 [label="④ BitDepthAdapter: clamp/quantise → 12 bpp"];
+  s04 [label="⑤ DisparityBuilder: S = row-prefix differences"];
+  s05 [label="⑥ MovementDetector: diff vs cached previous frame"];
+  s06 [label="⑦ QuadTreeRegionMap: classify static/low/high motion"];
+  s07 [label="⑧ FrequencyAnalyser: split S → TOP / R / B"];
+  s08 [label="⑨ rANS-8 encode (TOP indices)"];
+  s09 [label="⑩ rANS-8 encode (B mask)"];
+  s10 [label="⑪ rANS-16 encode (R remainders)"];
+  s11 [label="⑫ SEIPayloadMuxer packs header + payloads"];
+  s12 [label="⑬ H.264 encoder receives RGB and SEI side-data"];
+  s13 [label="⑭ NAL stream emitted: [SPS][PPS][SEI:scc][IDR-slice]…"];
+
+  s00->s01->s02->s03->s04->s05->s06->s07->s08;
+  s08->s09->s10->s11->s12->s13;
+}

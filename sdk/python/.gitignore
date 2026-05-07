@@ -1,0 +1,21 @@
+# Python build artefacts
+build/
+dist/
+wheelhouse/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+
+# scikit-build-core
+_skbuild/
+
+# Compiled extensions (built into src/scc_py during editable install)
+src/scc_py/_core*.so
+src/scc_py/_core*.pyd
+src/scc_py/_core*.dylib
+
+# Type-checker / test caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/

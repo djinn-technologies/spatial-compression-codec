@@ -1,0 +1,42 @@
+digraph Modules {
+  rankdir=BT;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.35, ranksep=0.5];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.14];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  rans      [label="rans (8/16)"];
+  quad      [label="quadtree"];
+  disp      [label="disparity"];
+  sei       [label="sei_codec"];
+  common    [label="scc_common"];
+  enc       [label="scc_encoder"];
+  dec       [label="scc_decoder"];
+  cabi      [label="libscc (C ABI)"];
+  wasm      [label="scc-wasm"];
+  py        [label="scc-py"];
+  unity     [label="scc-unity"];
+  unreal    [label="scc-unreal"];
+  fe        [label="studio-frontend (React)"];
+  ag        [label="studio-agent (Rust)"];
+  api       [label="studio-api (Node)"];
+  bench     [label="scc-bench"];
+  fixtures  [label="scc-fixtures"];
+
+  common -> rans;
+  common -> quad;
+  common -> disp;
+  common -> sei;
+  enc -> common;
+  dec -> common;
+  cabi -> enc;
+  cabi -> dec;
+  wasm -> cabi;
+  py   -> cabi;
+  unity -> cabi;
+  unreal -> cabi;
+  fe -> wasm;
+  ag -> cabi;
+  api -> ag;
+  bench -> cabi;
+  bench -> fixtures;
+}

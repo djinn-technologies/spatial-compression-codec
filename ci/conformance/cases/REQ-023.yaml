@@ -1,0 +1,15 @@
+# REQ-023 — H.264 SEI muxing (NAL-escape correctness).
+
+id: REQ-023
+description: Encoded payloads are wrapped as H.264 SEI user_data_unregistered with correct NAL escape.
+sad_section: "§E. Wire format & SEI"
+evidence: "[H.264 §D.1.6]; [H.264 §7.4.1.1]"
+evidence_paths:
+  - codec/include/scc/sei.hpp
+  - codec/src/common/sei.cpp
+  - codec/tests/test_sei.cpp
+test_command: "ctest --test-dir build -R 'sei_' --output-on-failure"
+pass_criteria_type: exit_code
+pass_criteria_expected: 0
+timeout_seconds: 60
+blocking: true

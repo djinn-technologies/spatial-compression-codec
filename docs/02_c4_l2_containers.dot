@@ -1,0 +1,62 @@
+digraph G {
+  rankdir=TB;
+  graph [bgcolor="white", fontname="Helvetica", fontsize=11, splines=true, nodesep=0.4, ranksep=0.6, compound=true];
+  node  [fontname="Helvetica", fontsize=9, shape=box, style="rounded,filled", margin=0.15, fillcolor="#1168BD", fontcolor="white"];
+  edge  [fontname="Helvetica", fontsize=8];
+
+  user [label="Capture / Viewer", fillcolor="#08427B"];
+  sensor [label="RGB-D Sensor", fillcolor="#999999"];
+  h264   [label="H.264 Encoder\n(libx264 / NVENC)", fillcolor="#999999"];
+  sfu    [label="WebRTC SFU", fillcolor="#999999"];
+
+  subgraph cluster_scc {
+    label="Spatial Compression Codec — System Boundary";
+    fontname="Helvetica"; fontsize=11; style="rounded,dashed"; color="#0B4884";
+
+    subgraph cluster_libscc {
+      label="libscc — Core Codec Library (C++17)"; style="rounded"; color="#5B7FB6";
+      enc    [label="scc_encoder"];
+      dec    [label="scc_decoder"];
+      common [label="scc_common\n(disparity, rANS, quad-tree)"];
+    }
+    subgraph cluster_sdk {
+      label="SCC SDK"; style="rounded"; color="#5B7FB6";
+      csdk  [label="C ABI shim\n(libscc.so/.dll/.dylib)"];
+      tssdk [label="TypeScript / WASM\n(@djinn/scc-wasm)"];
+      pysdk [label="Python (scc-py via\npybind11)"];
+      uesdk [label="Unity / Unreal plugin"];
+    }
+    subgraph cluster_app {
+      label="Reference App — SCC Studio"; style="rounded"; color="#5B7FB6";
+      web   [label="Web Frontend\n(React + WebGPU)"];
+      agent [label="Capture Agent (Rust)"];
+      api   [label="Control-plane API\n(Node + Fastify)"];
+    }
+    subgraph cluster_data {
+      label="Data Plane"; style="rounded"; color="#5B7FB6";
+      queue [label="Frame Queue\n(ring buffer)"];
+      cfg   [label="Config & Profiles\n(SQLite / JSON)", shape=cylinder];
+      cache [label="Recorded Streams\n(disk / S3)", shape=cylinder];
+    }
+  }
+
+  user -> web [label="HTTPS"];
+  web -> api [label="REST + WS"];
+  api -> agent [label="spawn / IPC"];
+  agent -> queue;
+  queue -> enc;
+  sensor -> agent [label="UVC / SDK"];
+  enc -> common;
+  dec -> common;
+  enc -> h264 [label="SEI payload"];
+  h264 -> sfu [label="H.264 NAL units"];
+  sfu -> dec [label="H.264 + SEI"];
+  dec -> tssdk;
+  tssdk -> web;
+  csdk -> enc [style=dashed, label="wraps"];
+  csdk -> dec [style=dashed, label="wraps"];
+  pysdk -> csdk [style=dashed];
+  uesdk -> csdk [style=dashed];
+  api -> cfg;
+  agent -> cache;
+}

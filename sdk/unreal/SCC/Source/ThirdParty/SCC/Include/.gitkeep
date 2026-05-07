@@ -1,0 +1,5 @@
+Reserved for libscc.h. The plugin's SCC.Build.cs falls back to
+<repo>/cabi/include/libscc.h when this directory is empty (in-tree
+development). The release / distribution path runs
+prepare-distribution.sh, which copies cabi/include/libscc.h here so
+the standalone plugin is self-contained.

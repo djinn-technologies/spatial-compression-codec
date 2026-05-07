@@ -1,0 +1,47 @@
+digraph DataflowE2E {
+  rankdir=LR;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.3, ranksep=0.45, compound=true];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.13];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  sensor [label="RGB-D Sensor", fillcolor="#999999", shape=cylinder];
+
+  subgraph cluster_cap {
+    label="Capture Path"; style="rounded"; color="#0B4884"; fontcolor="#0B4884";
+    rgb       [label="RGB stream"];
+    depth     [label="Depth stream\n(12/16 bpp)"];
+    filter    [label="Depth filter"];
+    s_calc    [label="Disparity S"];
+    motion    [label="Motion +\nquad-tree"];
+    interlace [label="Interlace\npattern apply"];
+    rans_e    [label="rANS encode\n(TOP/B/R)"];
+    sei_pack  [label="SEI packer"];
+    h264_e    [label="H.264 encoder"];
+  }
+
+  bitstream [label="H.264 bitstream\n(RGB NALs +\nSCC SEIs)", fillcolor="#27AE60"];
+  transport [label="Transport:\nWebRTC / RTMP /\n.mp4 file", fillcolor="#27AE60"];
+
+  subgraph cluster_play {
+    label="Playback Path"; style="rounded"; color="#0B4884"; fontcolor="#0B4884";
+    h264_d    [label="H.264 decoder"];
+    sei_unp   [label="SEI unpacker"];
+    rans_d    [label="rANS decode"];
+    s_inv     [label="Inverse S\n→ depth"];
+    interp    [label="Interlace fill\n+ interpolation"];
+    out_rgb   [label="RGB frame"];
+    out_depth [label="Depth frame"];
+    render    [label="3D Renderer\n(WebGPU / Unity / UE)"];
+  }
+
+  sensor->rgb;
+  sensor->depth;
+  rgb->h264_e;
+  depth->filter->s_calc->motion->interlace->rans_e->sei_pack;
+  sei_pack->h264_e;
+  h264_e->bitstream->transport->h264_d;
+  h264_d->out_rgb;
+  h264_d->sei_unp->rans_d->s_inv->interp->out_depth;
+  out_rgb->render;
+  out_depth->render;
+}

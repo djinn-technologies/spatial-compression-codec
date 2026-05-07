@@ -1,0 +1,15 @@
+# Cargo
+target/
+
+# Local override of CARGO_HOME / target dir
+.cargo/.config.local
+
+# npm
+npm/node_modules/
+npm/binaries/*/
+!npm/binaries/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.iml

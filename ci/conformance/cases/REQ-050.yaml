@@ -1,0 +1,17 @@
+# REQ-050 — Encode throughput floor (numeric pass criterion example).
+
+id: REQ-050
+description: rANS-8 encode throughput exceeds 200 MB/s on a representative payload.
+sad_section: "§G. Quality, throughput, and benchmarks"
+evidence: "[Brief]; ADR-001"
+evidence_paths:
+  - codec/src/common/rans.cpp
+  - bench/bench_rans.cpp
+test_command: "build/bench/bench_rans"
+pass_criteria_type: numeric
+pass_criteria_pattern: "rans8 encode\\s+([0-9.]+)\\s+MB/s"
+pass_criteria_stream: stdout
+pass_criteria_comparator: ">"
+pass_criteria_threshold: 200.0
+timeout_seconds: 120
+blocking: false

@@ -1,0 +1,20 @@
+digraph Quad {
+  rankdir=TB;
+  graph [bgcolor=white, fontname=Helvetica, fontsize=11, nodesep=0.35, ranksep=0.5];
+  node  [fontname=Helvetica, fontsize=9, shape=box, style="rounded,filled", fillcolor="#1168BD", fontcolor=white, margin=0.16];
+  edge  [fontname=Helvetica, fontsize=8];
+
+  fn   [label="Depth frame f(n)", fillcolor="#27AE60"];
+  fp   [label="Depth frame f(n-1)\n(from FrameCache)", fillcolor="#27AE60"];
+  diff [label="Δ(i,j) = | f(n)[i,j] − f(n-1)[i,j] |"];
+  th   [label="Apply motion thresholds:\nτ_static / τ_low / τ_high"];
+  qr   [label="Quad-tree root\n(W × H)"];
+  qs   [label="Recursively split if region\nexceeds per-class motion budget\n(stop at min leaf size)"];
+  cl   [label="Classify each leaf:\n0 = static / 1 = low / 2 = high"];
+  pat  [label="Assign interlace pattern\ne.g. 11111111 (full update)\n     10110111 (mixed)\n     01010101 (alternating)"];
+  out  [label="Region map +\nper-region pattern\n→ encoder muxer", fillcolor="#C0392B"];
+
+  fn->diff;
+  fp->diff;
+  diff->th->qr->qs->cl->pat->out;
+}

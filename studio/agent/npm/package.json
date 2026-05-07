@@ -1,0 +1,43 @@
+{
+    "name": "@djinn/scc-studio-agent",
+    "version": "1.0.0",
+    "description": "Native daemon owning the depth-sensor connection for the SCC Studio. Distributed as platform-native binaries inside this npm package; the JS shim execs the right one for the host.",
+    "license": "Apache-2.0",
+    "type": "module",
+    "bin": {
+        "scc-studio-agent": "./bin/scc-studio-agent.js"
+    },
+    "files": [
+        "bin",
+        "binaries",
+        "README.md",
+        "LICENSE.md"
+    ],
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "scripts": {
+        "postinstall": "node bin/postinstall.js"
+    },
+    "os": [
+        "linux",
+        "darwin",
+        "win32"
+    ],
+    "cpu": [
+        "x64",
+        "arm64"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "keywords": [
+        "depth",
+        "compression",
+        "codec",
+        "sensor",
+        "capture",
+        "studio"
+    ]
+}

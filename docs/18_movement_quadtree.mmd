@@ -1,0 +1,23 @@
+flowchart TB
+    f_n["Depth frame f(n)"]:::input
+    f_prev["Depth frame f(n-1)<br/>(from cache)"]:::input
+    diff["Δ(i,j) = |f(n)[i,j] − f(n-1)[i,j]|"]:::process
+    thresh["Apply motion thresholds:<br/>τ_static / τ_low / τ_high"]:::process
+    quad_root["Quad-tree root<br/>(W × H)"]:::process
+    quad_split["Split if region exceeds<br/>per-class motion budget<br/>(recurse to leaf size)"]:::process
+    classify["Classify each leaf:<br/>0 = static / 1 = low motion / 2 = high motion"]:::process
+    pat["Assign interlace pattern<br/>(e.g. 11111111 / 10110111 / 01010101)"]:::process
+    out["Region map + per-region pattern<br/>→ encoder muxer"]:::output
+
+    f_n --> diff
+    f_prev --> diff
+    diff --> thresh
+    thresh --> quad_root
+    quad_root --> quad_split
+    quad_split --> classify
+    classify --> pat
+    pat --> out
+
+    classDef input fill:#27AE60,color:#fff
+    classDef output fill:#C0392B,color:#fff
+    classDef process fill:#1168BD,color:#fff
