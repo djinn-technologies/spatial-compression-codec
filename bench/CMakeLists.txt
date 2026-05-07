@@ -82,8 +82,12 @@ if(SCC_ENABLE_BENCH_HARNESS)
     target_include_directories(scc_bench PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
+    # Link against scc::libscc (the C ABI shim) rather than the internal
+    # scc::codec target. The bench is meant to measure the surface every
+    # downstream binding actually uses; including any C-ABI marshalling
+    # cost is part of the honest answer to "how fast is SCC in production?".
     target_link_libraries(scc_bench PRIVATE
-        scc::codec
+        scc::libscc
         scc_warnings
         ZLIB::ZLIB
         PNG::PNG
